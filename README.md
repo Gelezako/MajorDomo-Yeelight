@@ -5,6 +5,8 @@
 
 Видео:
 
-Сложные сценарии для Yeelight ленты и лампочки в Majordomo https://www.youtube.com/watch?v=b6HvExwq9x4
+Сложные сценарии для Yeelight ленты и лампочки в Majordomo
+https://www.youtube.com/watch?v=b6HvExwq9x4
 
-Управление светодиодной лентой Yeelight Led Strip голосом с помощью Amazon Echo (Alexa) https://www.youtube.com/watch?v=89zsdS0Tetc
+Управление светодиодной лентой Yeelight Led Strip голосом с помощью Amazon Echo (Alexa)
+https://www.youtube.com/watch?v=89zsdS0Tetc
