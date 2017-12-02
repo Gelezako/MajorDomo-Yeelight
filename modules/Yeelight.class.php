@@ -2,12 +2,11 @@
 /**
 * Yeelight 
 * @package project
-* @author Wizard <sergejey@gmail.com>
-* @copyright http://majordomo.smartliving.ru/ (c)
+* @author Alex Sokolov <admin@gelezako.com>
+* @copyright http://blog.gelezako.com/ (c)
 * @version 0.1 (wizard, 16:12:20 [Dec 01, 2017])
 */
-//
-//
+
 include_once(DIR_MODULES.'Yeelight/Yeelight_library.php');
 class Yeelight extends module {
 /**
@@ -142,9 +141,13 @@ addClassProperty('Yeelight', 'bright', 0);
 addClassProperty('Yeelight', 'Location', 0);
 addClassProperty('Yeelight', 'name', 0);
 addClassProperty('Yeelight', 'support', 0);
-addClassMethod('Yeelight', 'on_off');
-addClassMethod('Yeelight', 'set_bright');
-addClassMethod('Yeelight', 'set_name');
+addClassProperty('Yeelight', 'rgb', 0);
+addClassProperty('Yeelight', 'hue', 0);
+addClassProperty('Yeelight', 'sat', 0);
+addClassProperty('Yeelight', 'ct', 0);
+addClassMethod('Yeelight', 'on_off',"require(DIR_MODULES.'Yeelight/Yeelight_on_off.php');");
+addClassMethod('Yeelight', 'set_bright',"require(DIR_MODULES.'Yeelight/Yeelight_set_bright.php');");
+addClassMethod('Yeelight', 'set_name',"require(DIR_MODULES.'Yeelight/Yeelight_set_name.php');");
 
 //=======================================
 //Создание объектов класса
@@ -199,14 +202,14 @@ foreach ($bulbList_prop as $bulb) {
    $result = strpos ($support, 'set_rgb');
    if ($result) {  
     setGlobal($objName.".rgb",$rgb);
-    addClassMethod('Yeelight', 'set_rgb');
+    addClassMethod('Yeelight', 'set_rgb',"require(DIR_MODULES.'Yeelight/Yeelight_set_rgb.php');");
     //say("Cоздается свойство РГБ",2); //GRB
    }
    
    $result = strpos ($support, 'set_ct_abx');
    if ($result) {
     setGlobal($objName.".ct",$ct);
-    addClassMethod('Yeelight', 'set_ct');
+    addClassMethod('Yeelight', 'set_ct',"require(DIR_MODULES.'Yeelight/Yeelight_set_ct.php');");
 	//say("Cоздается свойство cи тэ",2);//CT
    }
    
@@ -214,45 +217,14 @@ foreach ($bulbList_prop as $bulb) {
    if ($result) {
     setGlobal($objName.".hue",$hue);
     setGlobal($objName.".sat",$sat);
-    addClassMethod('Yeelight', 'set_hsv');
+    addClassMethod('Yeelight', 'set_hsv',"require(DIR_MODULES.'Yeelight/Yeelight_set_hsv.php');");
 	//say("Cоздается свойство аш эс вэ",2); //HSV
    }
   } elseif ($model =="mono") {
      say("Найдено новое устройство: Илайт белая лампочка",2);
   }
    if($model="stripe")say("Найдено новое устройство: Илайт диодная лента",2);
-   if($model="color")say("Найдено новое устройство: Илайт цветная лампочка",2);
-   
-	//Инициализация методов
-	/*
-	injectObjectMethodCode("Yeelight.on_off","Yeelight","
-	include_once(DIR_MODULES . 'Yeelight/Yeelight.class.php');
-	//========= метод on_off (включение/выключение) ===================
-	$Location = $this->getProperty('Location');
-	$id = $this->getProperty('id');
-	$status = $this->getProperty('status');
-	if ($status) $power = 'on'; 
-	if (!$status) $power = 'off';
-	$data = [
-	'Location' => $Location,
-	id' => $id, 
-	];
-	$socketFactory = new Factory();
-	$bulbFactory = new BulbFactory($socketFactory);
-	$bulb = $bulbFactory->create($data);
-	$res = $bulb->setPower($power, 'smooth', 1000); //включить/выключить
-	if (array_key_exists('result', $res)) {
-		$result = $res [result][0];
-		//переменная содержит ответ от лампочки
-		}
-	if (array_key_exists('error', $res)) {
-		$result = $res [error][message].'. Code '.$res [error][code];
-		DebMes('Ошибка Yeelight: '.$result);
-		}
-
-	");
-   */
-   
+   if($model="color")say("Найдено новое устройство: Илайт цветная лампочка",2);   
  }
 }
 
