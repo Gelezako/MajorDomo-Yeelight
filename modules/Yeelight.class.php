@@ -8,6 +8,7 @@
 */
 
 include_once(DIR_MODULES.'Yeelight/Yeelight_library.php');
+
 class Yeelight extends module {
 /**
 * Yeelight
@@ -112,8 +113,6 @@ function run() {
 */
 function admin(&$out) {
 }
-
-
 function usual(&$out) {
  $this->admin($out);
  
@@ -129,26 +128,65 @@ function usual(&$out) {
 * @access private
 */
  function install($data='') {
- //Скрипт для MD, поиск устройств в сети, создание объектов MD, создание и заполнение свойств объектов MD
 
-//Создание класса MD Yeelight, классовых свойств и методов
 addClass('Yeelight');
-addClassProperty('Yeelight', 'id', 0); //Создаёт свойство класса и указывает, что необходимо хранить историю значений 0 дней
-addClassProperty('Yeelight', 'model', 0);
-addClassProperty('Yeelight', 'status', 0);
-addClassProperty('Yeelight', 'model', 0);
-addClassProperty('Yeelight', 'bright', 0);
-addClassProperty('Yeelight', 'Location', 0);
-addClassProperty('Yeelight', 'name', 0);
-addClassProperty('Yeelight', 'support', 0);
-addClassProperty('Yeelight', 'rgb', 0);
-addClassProperty('Yeelight', 'hue', 0);
-addClassProperty('Yeelight', 'sat', 0);
-addClassProperty('Yeelight', 'ct', 0);
-addClassMethod('Yeelight', 'on_off',"require(DIR_MODULES.'Yeelight/Yeelight_on_off.php');");
-addClassMethod('Yeelight', 'set_bright',"require(DIR_MODULES.'Yeelight/Yeelight_set_bright.php');");
-addClassMethod('Yeelight', 'set_name',"require(DIR_MODULES.'Yeelight/Yeelight_set_name.php');");
+	addClassMethod('Yeelight', 'on_off',"require(DIR_MODULES.'Yeelight/Yeelight_on_off.php');");
+	addClassMethod('Yeelight', 'set_bright',"require(DIR_MODULES.'Yeelight/Yeelight_set_bright.php');");
+	addClassMethod('Yeelight', 'set_name',"require(DIR_MODULES.'Yeelight/Yeelight_set_name.php');");
+	addClassMethod('Yeelight', 'set_rgb',"require(DIR_MODULES.'Yeelight/Yeelight_set_rgb.php');");
+	addClassMethod('Yeelight', 'set_ct',"require(DIR_MODULES.'Yeelight/Yeelight_set_ct.php');");
+	addClassMethod('Yeelight', 'set_hsv',"require(DIR_MODULES.'Yeelight/Yeelight_set_hsv.php');");
 
+	$prop_id=addClassProperty('Yeelight', 'status', 0);
+				  if ($prop_id) {
+					  $property=SQLSelectOne("SELECT * FROM properties WHERE ID=".$prop_id);
+					  $property['ONCHANGE']='on_off';
+					  SQLUpdate('properties',$property);
+				  } 
+
+	$prop_id=addClassProperty('Yeelight', 'bright', 0);
+				  if ($prop_id) {
+					  $property=SQLSelectOne("SELECT * FROM properties WHERE ID=".$prop_id);
+					  $property['ONCHANGE']='set_bright';
+					  SQLUpdate('properties',$property);
+				  } 
+
+
+	$prop_id=addClassProperty('Yeelight', 'name', 0);
+				  if ($prop_id) {
+					  $property=SQLSelectOne("SELECT * FROM properties WHERE ID=".$prop_id);
+					  $property['ONCHANGE']='set_name';
+					  SQLUpdate('properties',$property);
+				  }
+	$prop_id=addClassProperty('Yeelight', 'rgb', 0);
+				  if ($prop_id) {
+					  $property=SQLSelectOne("SELECT * FROM properties WHERE ID=".$prop_id);
+					  $property['ONCHANGE']='set_rgb';
+					  SQLUpdate('properties',$property);
+				  }
+	$prop_id=addClassProperty('Yeelight', 'hue', 0);
+				  if ($prop_id) {
+					  $property=SQLSelectOne("SELECT * FROM properties WHERE ID=".$prop_id);
+					  $property['ONCHANGE']='set_hsv';
+					  SQLUpdate('properties',$property);
+				  }
+
+	$prop_id=addClassProperty('Yeelight', 'sat', 0);
+				  if ($prop_id) {
+					  $property=SQLSelectOne("SELECT * FROM properties WHERE ID=".$prop_id);
+					  $property['ONCHANGE']='set_hsv';
+					  SQLUpdate('properties',$property);
+				  }
+	$prop_id=addClassProperty('Yeelight', 'ct', 0);
+				  if ($prop_id) {
+					  $property=SQLSelectOne("SELECT * FROM properties WHERE ID=".$prop_id);
+					  $property['ONCHANGE']='set_ct';
+					  SQLUpdate('properties',$property);
+				  }				  
+	addClassProperty('Yeelight', 'id', 0); //Создаёт свойство класса и указывает, что необходимо хранить историю значений 0 дней
+	addClassProperty('Yeelight', 'model', 0);
+	addClassProperty('Yeelight', 'Location', 0);				  
+	addClassProperty('Yeelight', 'support', 0);
 //=======================================
 //Создание объектов класса
 //    Поиск устройств
@@ -162,14 +200,15 @@ foreach ($bulbList_prop as $bulb) {
  $name =  trim($bulb[name]); 
  $COLOR_MODE = trim($bulb[color_mode]);
  $powerTXT = $bulb[power];
- if ($powerTXT == "on") $power = 1;
- if ($powerTXT = "off") $power = 0;
+ if ($powerTXT == "on") { $power = 1; }
+ if ($powerTXT = "off") { $power = 0; }
  $bright = trim($bulb[bright]);
  $ct = trim($bulb[ct]);
  $rgb = dechex($bulb[rgb]);
  $hue = trim($bulb[hue]);
  $sat = trim($bulb[sat]);
  $support = trim($bulb[support]); 
+ 
  //получаем список объектов класса
  $objects=getObjectsByClass("Yeelight");
  $searhID = 0;
@@ -178,15 +217,113 @@ foreach ($bulbList_prop as $bulb) {
    $searhID += 1;   
   }     
  }
- if ($searhID) { 
-  say("Устройство Илайт уже установлено.",2);
- } else {  
+ if (!$searhID){  
   if ($name) {
    $objName = $name;
   } else {
-   $objName = $model."_".$id; 
+   //$objName = $model."_".$id.rand(); 
+   $objName = $model."_".$id.rand();
+     if($model=="stripe") {$objDescription = array('Светодиодная лента');
+    $rec = SQLSelectOne("SELECT ID FROM classes WHERE TITLE LIKE '" . DBSafe("Yeelight") . "'");
+    if (!$rec['ID']) {
+        $rec = array();
+        $rec['TITLE'] = $objName;
+        $rec['DESCRIPTION'] = $objDescription;
+        $rec['ID'] = SQLInsert('classes', $rec);
+    }
+    for ($i = 0; $i < count($objName); $i++) {
+        $obj_rec = SQLSelectOne("SELECT ID FROM objects WHERE CLASS_ID='" . $rec['ID'] . "' AND TITLE LIKE '" . DBSafe($objName) . "'");
+        if (!$obj_rec['ID']) {
+            $obj_rec = array();
+            $obj_rec['CLASS_ID'] = $rec['ID'];
+            $obj_rec['TITLE'] = $objName;
+            $obj_rec['DESCRIPTION'] = $objDescription[$i];
+            $obj_rec['ID'] = SQLInsert('objects', $obj_rec);
+        }
+    }
   }
-  addClassObject('Yeelight', $objName); //создаем объект с новым id
+  
+ if($model=="color") {$objDescription = array('Цветная лампочка');
+	 $rec = SQLSelectOne("SELECT ID FROM classes WHERE TITLE LIKE '" . DBSafe("Yeelight") . "'");
+		if (!$rec['ID']) {
+			$rec = array();
+			$rec['TITLE'] = $objName;
+			$rec['DESCRIPTION'] = $objDescription;
+			$rec['ID'] = SQLInsert('classes', $rec);
+		}
+		for ($i = 0; $i < count($objName); $i++) {
+			$obj_rec = SQLSelectOne("SELECT ID FROM objects WHERE CLASS_ID='" . $rec['ID'] . "' AND TITLE LIKE '" . DBSafe($objName) . "'");
+			if (!$obj_rec['ID']) {
+				$obj_rec = array();
+				$obj_rec['CLASS_ID'] = $rec['ID'];
+				$obj_rec['TITLE'] = $objName;
+				$obj_rec['DESCRIPTION'] = $objDescription[$i];
+				$obj_rec['ID'] = SQLInsert('objects', $obj_rec);
+			}
+		}
+ }
+ if($model=="mono") {$objDescription = array('Белая лампочка');
+	 $rec = SQLSelectOne("SELECT ID FROM classes WHERE TITLE LIKE '" . DBSafe("Yeelight") . "'");
+		if (!$rec['ID']) {
+			$rec = array();
+			$rec['TITLE'] = $objName;
+			$rec['DESCRIPTION'] = $objDescription;
+			$rec['ID'] = SQLInsert('classes', $rec);
+		}
+		for ($i = 0; $i < count($objName); $i++) {
+			$obj_rec = SQLSelectOne("SELECT ID FROM objects WHERE CLASS_ID='" . $rec['ID'] . "' AND TITLE LIKE '" . DBSafe($objName) . "'");
+			if (!$obj_rec['ID']) {
+				$obj_rec = array();
+				$obj_rec['CLASS_ID'] = $rec['ID'];
+				$obj_rec['TITLE'] = $objName;
+				$obj_rec['DESCRIPTION'] = $objDescription[$i];
+				$obj_rec['ID'] = SQLInsert('objects', $obj_rec);
+			}
+		}
+ }
+ 
+  if($model=="ceiling") {$objDescription = array('Потолочный светильник');
+	 $rec = SQLSelectOne("SELECT ID FROM classes WHERE TITLE LIKE '" . DBSafe("Yeelight") . "'");
+		if (!$rec['ID']) {
+			$rec = array();
+			$rec['TITLE'] = $objName;
+			$rec['DESCRIPTION'] = $objDescription;
+			$rec['ID'] = SQLInsert('classes', $rec);
+		}
+		for ($i = 0; $i < count($objName); $i++) {
+			$obj_rec = SQLSelectOne("SELECT ID FROM objects WHERE CLASS_ID='" . $rec['ID'] . "' AND TITLE LIKE '" . DBSafe($objName) . "'");
+			if (!$obj_rec['ID']) {
+				$obj_rec = array();
+				$obj_rec['CLASS_ID'] = $rec['ID'];
+				$obj_rec['TITLE'] = $objName;
+				$obj_rec['DESCRIPTION'] = $objDescription[$i];
+				$obj_rec['ID'] = SQLInsert('objects', $obj_rec);
+			}
+		}
+ }
+ 
+   if($model=="bslamp") {$objDescription = array('Прикроватный ночник');
+	 $rec = SQLSelectOne("SELECT ID FROM classes WHERE TITLE LIKE '" . DBSafe("Yeelight") . "'");
+		if (!$rec['ID']) {
+			$rec = array();
+			$rec['TITLE'] = $objName;
+			$rec['DESCRIPTION'] = $objDescription;
+			$rec['ID'] = SQLInsert('classes', $rec);
+		}
+		for ($i = 0; $i < count($objName); $i++) {
+			$obj_rec = SQLSelectOne("SELECT ID FROM objects WHERE CLASS_ID='" . $rec['ID'] . "' AND TITLE LIKE '" . DBSafe($objName) . "'");
+			if (!$obj_rec['ID']) {
+				$obj_rec = array();
+				$obj_rec['CLASS_ID'] = $rec['ID'];
+				$obj_rec['TITLE'] = $objName;
+				$obj_rec['DESCRIPTION'] = $objDescription[$i];
+				$obj_rec['ID'] = SQLInsert('objects', $obj_rec);
+			}
+		}
+ }
+ 
+  }
+  //addClassObject('Yeelight', $objName); //создаем объект с новым id
   //заполняем классовые свойства объекта
   setGlobal($objName.".id",$id);
   setGlobal($objName.".model",$model);
@@ -197,36 +334,26 @@ foreach ($bulbList_prop as $bulb) {
   setGlobal($objName.".support",$support);
    
   //создаем свойства объекта с учетом специфики ламп
-  if ($model =="stripe" OR $model =="color") {
-    
+  if ($model =="stripe" OR $model =="color") {    
    $result = strpos ($support, 'set_rgb');
    if ($result) {  
     setGlobal($objName.".rgb",$rgb);
-    addClassMethod('Yeelight', 'set_rgb',"require(DIR_MODULES.'Yeelight/Yeelight_set_rgb.php');");
-    //say("Cоздается свойство РГБ",2); //GRB
    }
    
    $result = strpos ($support, 'set_ct_abx');
    if ($result) {
     setGlobal($objName.".ct",$ct);
-    addClassMethod('Yeelight', 'set_ct',"require(DIR_MODULES.'Yeelight/Yeelight_set_ct.php');");
-	//say("Cоздается свойство cи тэ",2);//CT
    }
    
    $result = strpos ($support, 'set_hsv');
    if ($result) {
     setGlobal($objName.".hue",$hue);
     setGlobal($objName.".sat",$sat);
-    addClassMethod('Yeelight', 'set_hsv',"require(DIR_MODULES.'Yeelight/Yeelight_set_hsv.php');");
-	//say("Cоздается свойство аш эс вэ",2); //HSV
    }
-  } elseif ($model =="mono") {
-     say("Найдено новое устройство: Илайт белая лампочка",2);
-  } 
+  } elseif ($model =="mono") {  }    
  }
 }
-  if($model="stripe")say("Найдено новое устройство: Илайт диодная лента",2);
-  if($model="color")say("Найдено новое устройство: Илайт цветная лампочка",2);  
+  
   parent::install();
  }
  
