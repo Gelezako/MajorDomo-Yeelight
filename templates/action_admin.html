@@ -90,6 +90,25 @@
 </div>
 </div>
 </fieldset>
+
+<div class="panel panel-info">   
+   <div class="panel-heading">Испольвание в ваших скриптах</div>
+   <div class="panel-body">
+      <code style="display:block">
+	  [#begin RESULT#]
+		Включить:  sg("[#TITLE#].status","1");<br>
+		Выключить: sg("[#TITLE#].status","0");<br>
+		Яркость 75%:   sg("[#TITLE#].bright","75");
+		[#if MODEL!="mono"#]
+		<br>Для ламп поддерживающих RGB цвета:<br>
+		Красный цвет: sg("[#TITLE#].rgb","ff000e");
+		[#endif#]
+		<br><br><br>
+	  [#end RESULT#]
+      </code>
+   </div>
+ </div>
+ 
 </form>
 
 
