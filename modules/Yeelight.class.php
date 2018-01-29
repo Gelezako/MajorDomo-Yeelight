@@ -112,6 +112,22 @@ function run() {
 * @access public
 */
 function admin(&$out) {
+
+	$objects=getObjectsByClass("Yeelight");
+	if ($objects[0]) {
+	for($i = 0; $i < count($objects); $i++) {
+		 $model = getGlobal($objects[$i]['TITLE'].".model");
+		 $ip = getGlobal($objects[$i]['TITLE'].".Location");
+		 if ($model){
+			 $objects[$i]['MODEL'] = $model;
+		}
+		 if ($ip){
+			 $objects[$i]['IP'] = $ip ;
+			 }
+	}
+	$out['RESULT'] = $objects;
+	}
+	
 }
 function usual(&$out) {
  $this->admin($out);
