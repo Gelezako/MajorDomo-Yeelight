@@ -17,41 +17,11 @@ if (!$tmp['ID'])
    exit; // no devices added -- no need to run this cycle
 echo date("H:i:s") . " running " . basename(__FILE__) . PHP_EOL;
 
-//-- вставка от cahek2202
-$socket=['IP'=>'192.168.0.108','PORT'=>55443];
-$IP = $socket['IP'];
-$port = $socket['PORT'];
-$socket = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
-socket_set_option($socket, SOL_SOCKET, SO_RCVTIMEO, array("sec"=>0,"usec"=>10000));
-$result = socket_connect($socket, $IP, $port);
-$read_buf = '';
-//-- конец вставки
-
 $latest_check=0;
 $checkEvery=5; // poll every 5 seconds
 while (1)
 {
-   setGlobal((str_replace('.php', '', basename(__FILE__))) . 'Run', time(), 1);
-   
-   //-- вставка от cahek2202
-        $res = socket_recv($socket, $read_buf, 2048, 0);
-		$res=json_decode($read_buf,true);
-		$status=$res["params"]["power"];
-		$bright=$res["params"]["bright"];
-		$ct=$res["params"]["ct"];
-		$rgb=$res["params"]["rgb"];
-		if($status){
-			if($status=='on'){sg('mono_0x0000000003360b8319.status',1);}
-			if($status=='off'){sg('mono_0x0000000003360b8319.status',0);}
-			}
-		if($bright){
-			sg('mono_0x0000000003360b8319.bright',$bright);
-			}
-		if($ct){
-			sg('mono_0x0000000003360b8319.ct',$ct);
-			}
-   //-- конец вставки
-   
+   setGlobal((str_replace('.php', '', basename(__FILE__))) . 'Run', time(), 1);  
    if ((time()-$latest_check)>$checkEvery) {
     $latest_check=time();
     echo date('Y-m-d H:i:s').' Polling devices...';
