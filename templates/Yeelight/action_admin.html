@@ -60,58 +60,59 @@
 [#if ERR#]
 <div class="alert alert-error"><#LANG_FILLOUT_REQURED#></div>
 [#endif ERR#]
-<fieldset>
-<div class="form-group">
-<div>
-<table class="table table-stripped">
- <tr>
-  <td><#LANG_DEVICE#></td>
-  <td>Иконка</td>
-  <td>IP</td>
-  <td>&nbsp;</td>
- </tr>
 
-[#begin RESULT#]
- <tr>
-   <td valign="top">[#MODEL#]</td>
-   <td style="vertical-align:middle">
-	<img src="../templates/Yeelight/img/small/[#MODEL#].png" height="40px">
-   </td>
-   <td>
-	[#if IP!=""#]
-		[#IP#]
-		&nbsp;
-		[#else#]unknown ip[#endif#]
-	[#endif#]
- </tr>
-[#end RESULT#]
+[#if RESULT==""#]Устрйоства не найдены
+	[#else#]
+	<fieldset>
+	<div class="form-group">
+	<div>
+	<table class="table table-stripped">
+	 <tr>
+	  <td><#LANG_DEVICE#></td>
+	  <td>Иконка</td>
+	  <td>IP</td>
+	  <td>&nbsp;</td>
+	 </tr>
 
-</table> 
-</div>
-</div>
-</fieldset>
-
-<div class="panel panel-info">   
-   <div class="panel-heading">Использование в ваших скриптах</div>
-   <div class="panel-body">
-      <code style="display:block">
-	  [#begin RESULT#]
-		Включить:  sg("[#TITLE#].status","1");<br>
-		Выключить: sg("[#TITLE#].status","0");<br>
-		Яркость 75%:   sg("[#TITLE#].bright","75");
-		[#if MODEL!="mono"#]
-		<br>Для ламп поддерживающих RGB цвета:<br>
-		Красный цвет: sg("[#TITLE#].rgb","ff000e");
+	[#begin RESULT#]
+	 <tr>
+	   <td valign="top">[#MODEL#]</td>
+	   <td style="vertical-align:middle">
+		<img src="../templates/Yeelight/img/small/[#MODEL#].png" height="40px">
+	   </td>
+	   <td>
+		[#if IP!=""#]
+			[#IP#]
+			&nbsp;
+			[#else#]unknown ip[#endif#]
 		[#endif#]
-		<br><br><br>
-	  [#end RESULT#]
-      </code>
-   </div>
- </div>
+	 </tr>
+	[#end RESULT#]
+
+	</table> 
+	</div>
+	</div>
+	</fieldset>
+
+
+	<div class="panel panel-info">   
+	   <div class="panel-heading">Использование в ваших скриптах</div>
+	   <div class="panel-body">
+	      <code style="display:block">
+		  [#begin RESULT#]
+			Включить:  sg("[#TITLE#].status","1");<br>
+			Выключить: sg("[#TITLE#].status","0");<br>
+			Яркость 75%:   sg("[#TITLE#].bright","75");
+			[#if MODEL!="mono"#]
+			<br>Для ламп поддерживающих RGB цвета:<br>
+			Красный цвет: sg("[#TITLE#].rgb","ff000e");
+			[#endif#]
+			<br><br><br>
+		  [#end RESULT#]
+	      </code>
+	   </div>
+	 </div>
+	[#endif#]
+[#endif#]
  
 </form>
-
-
-
-
-
