@@ -1,8 +1,17 @@
+<!--
+* Модуль Yeelight 
+* @author Alex Sokolov <admin@gelezako.com>
+* @copyright Alex Sokolov http://blog.gelezako.com (c)
+* @version 0.1 (wizard, 10:02:10 [Feb 06, 2017])
+-->
 
-<h3>Устройства Yeelight</h3><br>
+<script src="https://use.fontawesome.com/7a155330f4.js"></script>
 
+<h3><#LANG_ER_APP_NAME#></h3><br>
+
+<!-- начало кнопка about-->
 <div class="float-right">
-	<button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#about">О модуле&nbsp;&nbsp;<span class="glyphicon glyphicon-info-sign icon-white"></span>
+	<button class="btn btn-primary btn-sm" data-toggle="modal" data-target="#about"><#LANG_ER_APP_ABOUT#>&nbsp;&nbsp;<span class="glyphicon glyphicon-info-sign icon-white"></span>
 	</button>
 </div>
 <div class="modal fade" id="about" tabindex="-1" role="dialog" aria-labelledby="about1" aria-hidden="true">
@@ -10,42 +19,48 @@
 	<div class="modal-dialog">
 		<div class="modal-content">
 			<div class="modal-header">
-				<button class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
-				<h4 class="modal-title">Устройства Yeelight</h4>
+				<button class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only"><#LANG_ER_APP_CLOSE#></span></button>
+				<h4 class="modal-title"><#LANG_ER_APP_NAME#></h4>
 			</div>
 			<div class="modal-body">
 				<div class="float-right">
-					<img src="../templates/Yeelight/img/YeelightLogo.jpg"  width="58" height="58">
+					<img src="https://connect.smartliving.ru/cms/addons/84_icon.jpg"  width="58">
 					<br><br><p><b>v.0.1</b></p>
 				</div>
                 <p class="float-left">
-					Модуль поддержки Yeelight устройств. <br><br>
-					Обсуждение модуля на <a href="https://majordomo.smartliving.ru/forum/viewtopic.php?f=4&t=4193" target="_blank">форуме</a>.<br>
-					Проект на <a href="https://github.com/Gelezako/MajorDomo-Yeelight" target="_blank">Github</a>.<br>
-					Проект в <a href="https://connect.smartliving.ru/tasks/64.html" target="_blank">Connect</a>.<br>
+					<#LANG_ER_APP_MODULE#> "<#LANG_ER_APP_NAME#>"<br><br>
+					<a href="https://majordomo.smartliving.ru/forum/viewtopic.php?f=5&t=3680" target="_blank"><#LANG_ER_APP_DISCUS#></a>.<br>
+					<#LANG_ER_APP_PROJ#> <a href="https://github.com/Gelezako/MajorDomo-ExchangeRates" target="_blank"><i class="fa fa-github" aria-hidden="true"> Github</i></a>.<br>
+					<#LANG_ER_APP_PROJ#> <a href="https://connect.smartliving.ru/addons/category3/84.html" target="_blank">Connect</a>.<br>
 				</p>
 				<hr size="1">
 				<p class="float-left">
-				Поддержать разработку и развитие модуля:
+				<#LANG_ER_APP_DONATE#>
 				<ul>
-				    <li>Страничка для доната в: <a href="https://www.liqpay.ua/ru/checkout/380972054741" target="_blank">Liqpay</a></li>
-					<li>Страничка для доната в: <a href="https://www.patreon.com/user?u=8755313" target="_blank">Patreon</a></li>
-					<li>Внутренний счет в <a href="https://connect.smartliving.ru/tasks/64.html" target="_blank">Connect</a></li>
+				    <li><#LANG_ER_APP_DONATE2#> <a href="https://www.liqpay.ua/ru/checkout/380972054741" target="_blank"><i class="fa fa-credit-card-alt" aria-hidden="true"> Liqpay</i></a></li>
+					<li><#LANG_ER_APP_DONATE2#> <a href="https://www.patreon.com/user?u=8755313" target="_blank">Patreon</a></li>
+					<li><#LANG_ER_APP_DONATE3#> <a href="https://connect.smartliving.ru/tasks/65.html" target="_blank">Connect</a></li>
 					<li>WMZ: Z361986620412</li>
 					<li>WMR: R202811747775</li>
 					<li>WMU: U201862406146</li>
 					<li>WME: E313349347372</li>
 				</ul>
                 </p>
-				<h6>Благодарности: <b><a href="https://telegram.me/agafonov_d" target="_blank">skysilver</a> (Yandex money: <a href="https://money.yandex.ru/to/410011205062626" target="_blank">410011205062626</a>)</b>, <b>erandess</b>.</h6>
+				<h6><#LANG_ER_APP_THANKS#>: <b><a href="https://telegram.me/agafonov_d" target="_blank">skysilver</a> (Yandex money: <a href="https://money.yandex.ru/to/410011205062626" target="_blank">410011205062626</a>)</b>, <b>erandess</b>.</h6>
 			</div>
 			<div class="modal-footer">
-				<div class="pull-left">Автор: <a href="https://telegram.me/gelezako" target="_blank">Gelezako</a></div>
-				<button type="button" class="btn btn-default" data-dismiss="modal">Закрыть</button>
+				<div class="pull-left"><#LANG_ER_APP_Author#>: <a href="https://telegram.me/gelezako" target="_blank"><i class="fa fa-telegram" aria-hidden="true"> Gelezako</i></a></div>
+				<button type="button" class="btn btn-default" data-dismiss="modal"><#LANG_ER_APP_CLOSE#></button>
 			</div>
 		</div>
 	</div>
 </div>
+
+<div>
+	<img src="https://connect.smartliving.ru/cms/addons/84_icon.jpg"  width="120">
+</div>
+
+<!-- конец кнопка about-->
 
 <div>
 	<img src="../templates/Yeelight/img/YeelightLogo.jpg"  width="120" height="120">
@@ -61,7 +76,7 @@
 <div class="alert alert-error"><#LANG_FILLOUT_REQURED#></div>
 [#endif ERR#]
 
-[#if RESULT==""#]Устрйоства не найдены
+[#if RESULT==""#]<#LANG_ER_APP_NOTFOUND#>
 	[#else#]
 	<fieldset>
 	<div class="form-group">
@@ -81,7 +96,7 @@
 		[#if IP!=""#]
 			[#IP#]
 			&nbsp;
-			[#else#]unknown ip[#endif#]
+			[#else#]<#LANG_ER_APP_IPNOTFOUND#>[#endif#]
 		[#endif#]
 	   </td>
 	 </tr>
@@ -93,16 +108,16 @@
 
 
 	<div class="panel panel-info">   
-	   <div class="panel-heading">Использование в ваших скриптах</div>
+	   <div class="panel-heading"><#LANG_ER_APP_USED#></div>
 	   <div class="panel-body">
 	      <code style="display:block">
 		  [#begin RESULT#]
-			Включить:  sg("[#TITLE#].status","1");<br>
-			Выключить: sg("[#TITLE#].status","0");<br>
-			Яркость 75%:   sg("[#TITLE#].bright","75");
+			<#LANG_DEVICES_TURN_ON#>:  sg("[#TITLE#].status","1");<br>
+			<#LANG_DEVICES_TURN_OFF#>: sg("[#TITLE#].status","0");<br>
+			<#LANG_ER_APP_BRIG#> 75%:   sg("[#TITLE#].bright","75");
 			[#if MODEL!="mono"#]
-			<br>Для ламп поддерживающих RGB цвета:<br>
-			Красный цвет: sg("[#TITLE#].rgb","ff000e");
+			<br><#LANG_ER_APP_HELP_TEXT#>:<br>
+			<#DEVICES_SET_COLOR#>: sg("[#TITLE#].rgb","ff000e");
 			[#endif#]
 			<br><br><br>
 		  [#end RESULT#]
