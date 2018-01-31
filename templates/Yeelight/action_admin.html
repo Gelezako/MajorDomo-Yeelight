@@ -65,20 +65,17 @@
 	[#else#]
 	<fieldset>
 	<div class="form-group">
-	<div>
 	<table class="table table-stripped">
 	 <tr>
 	  <td><#LANG_DEVICE#></td>
-	  <td>Иконка</td>
 	  <td>IP</td>
-	  <td>&nbsp;</td>
 	 </tr>
 
 	[#begin RESULT#]
 	 <tr>
-	   <td valign="top">[#MODEL#]</td>
-	   <td style="vertical-align:middle">
-		<img src="../templates/Yeelight/img/small/[#MODEL#].png" height="40px">
+	   <td valign="top">
+	   <img src="../templates/Yeelight/img/small/[#MODEL#].png" height="40px">
+	   [#MODEL#]
 	   </td>
 	   <td>
 		[#if IP!=""#]
@@ -86,12 +83,12 @@
 			&nbsp;
 			[#else#]unknown ip[#endif#]
 		[#endif#]
+	   </td>
 	 </tr>
 	[#end RESULT#]
 
 	</table> 
-	</div>
-	</div>
+	</div>	
 	</fieldset>
 
 
