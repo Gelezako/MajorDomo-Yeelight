@@ -1,5 +1,5 @@
 # MajorDomo-Yeelight
-Модуль для MajorDomo, позволяет автоматически добавить устройства Yeelight в систему и управлять ими.
+Модуль для MajorDomo, позволяет автоматически добавить устройства Yeelight в систему и управлять ими. Токен для управления не требуется.
 
 Детали https://majordomo.smartliving.ru/forum/viewtopic.php?f=4&t=4193
 
