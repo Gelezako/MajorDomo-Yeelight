@@ -72,7 +72,9 @@
 <div class="alert alert-error"><#LANG_FILLOUT_REQURED#></div>
 [#endif ERR#]
 
-[#if RESULT==""#]<#LANG_ER_APP_NOTFOUND#>
+[#if RESULT==""#]
+	<h4><#LANG_ER_APP_NOTFOUND#></h4><br><br><br>
+        <center><img src="../templates/Yeelight/img/NoResults.svg" alt="<#LANG_ER_APP_NOTFOUND#>"></center>
 	[#else#]
 	<fieldset>
 	<div class="form-group">
