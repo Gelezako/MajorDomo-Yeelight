@@ -18,5 +18,7 @@ if (array_key_exists('result', $res)) {
     }
 if (array_key_exists('error', $res)) {
     $result = $res [error][message].". Code ".$res [error][code];
-    DebMes("Ошибка Yeelight: ".$result);
+	$model=$this->getProperty('model');
+    DebMes("Ошибка установки яркости Yeelight устройства ".$Location.", модель: ".$model);
+	//DebMes("Ошибка установки яркостиYeelight: ".$result);
     }
