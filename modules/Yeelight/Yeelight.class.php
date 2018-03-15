@@ -298,8 +298,9 @@ foreach ($bulbList_prop as $bulb) {
 		}
  }
  
-  if($model=="ceiling") {$objDescription = array('Потолочный светильник');
-	 $rec = SQLSelectOne("SELECT ID FROM classes WHERE TITLE LIKE '" . DBSafe("Yeelight") . "'");
+  if($model=="ceiling" || $model == 'ceiling1') {
+	$objDescription = array('Потолочный светильник');
+	$rec = SQLSelectOne("SELECT ID FROM classes WHERE TITLE LIKE '" . DBSafe("Yeelight") . "'");
 		if (!$rec['ID']) {
 			$rec = array();
 			$rec['TITLE'] = $objName;
