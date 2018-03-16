@@ -144,8 +144,13 @@ function usual(&$out) {
 * @access private
 */
  function install($data='') {
-
-addClass('Yeelight');
+	parent::install();
+	
+	@include_once(ROOT.'languages/'.$this->name.'_'.SETTINGS_SITE_LANGUAGE.'.php'); //локализация
+    @include_once(ROOT.'languages/'.$this->name.'_default'.'.php');
+	SQLExec("UPDATE project_modules SET TITLE='".LANG_YE_APP_TITLE."' WHERE NAME='".$this->name."'"); 
+	
+    addClass('Yeelight');
 	addClassMethod('Yeelight', 'on_off',"require(DIR_MODULES.'Yeelight/Yeelight_on_off.php');");
 	addClassMethod('Yeelight', 'set_bright',"require(DIR_MODULES.'Yeelight/Yeelight_set_bright.php');");
 	addClassMethod('Yeelight', 'set_name',"require(DIR_MODULES.'Yeelight/Yeelight_set_name.php');");
@@ -237,17 +242,18 @@ foreach ($bulbList_prop as $bulb) {
   if ($name) {
    $objName = $name;
   } else {
-   //$objName = $model."_".$id.rand(); 
-   $objName = $model."_".$id.rand();
-     if($model=="stripe") {$objDescription = array('Светодиодная лента');
-    $rec = SQLSelectOne("SELECT ID FROM classes WHERE TITLE LIKE '" . DBSafe("Yeelight") . "'");
-    if (!$rec['ID']) {
+    //$objName = $model."_".$id.rand(); 
+    $objName = $model."_".$id.rand();
+    if($model =="stripe" OR $model =="strip" OR $model =="stripe1" OR $model =="strip1"){
+		$objDescription = array('Светодиодная лента');
+		$rec = SQLSelectOne("SELECT ID FROM classes WHERE TITLE LIKE '" . DBSafe("Yeelight") . "'");
+		if (!$rec['ID']) {
         $rec = array();
         $rec['TITLE'] = $objName;
         $rec['DESCRIPTION'] = $objDescription;
         $rec['ID'] = SQLInsert('classes', $rec);
-    }
-    for ($i = 0; $i < count($objName); $i++) {
+		}
+		for ($i = 0; $i < count($objName); $i++) {
         $obj_rec = SQLSelectOne("SELECT ID FROM objects WHERE CLASS_ID='" . $rec['ID'] . "' AND TITLE LIKE '" . DBSafe($objName) . "'");
         if (!$obj_rec['ID']) {
             $obj_rec = array();
@@ -298,7 +304,7 @@ foreach ($bulbList_prop as $bulb) {
 		}
  }
  
-  if($model=="ceiling" || $model == 'ceiling1') {
+  if($model=="ceiling" || $model == "ceiling1" || $model == "ceiling2" || $model == "ceiling3") {
 	$objDescription = array('Потолочный светильник');
 	$rec = SQLSelectOne("SELECT ID FROM classes WHERE TITLE LIKE '" . DBSafe("Yeelight") . "'");
 		if (!$rec['ID']) {
@@ -319,8 +325,9 @@ foreach ($bulbList_prop as $bulb) {
 		}
  }
  
-   if($model=="bslamp") {$objDescription = array('Прикроватный ночник');
-	 $rec = SQLSelectOne("SELECT ID FROM classes WHERE TITLE LIKE '" . DBSafe("Yeelight") . "'");
+   if($model=="bslamp") {
+	$objDescription = array('Прикроватный ночник');
+	$rec = SQLSelectOne("SELECT ID FROM classes WHERE TITLE LIKE '" . DBSafe("Yeelight") . "'");
 		if (!$rec['ID']) {
 			$rec = array();
 			$rec['TITLE'] = $objName;
@@ -351,7 +358,7 @@ foreach ($bulbList_prop as $bulb) {
   setGlobal($objName.".support",$support);
    
   //создаем свойства объекта с учетом специфики ламп
-  if ($model =="stripe" OR $model =="color") {    
+  if ($model =="stripe" OR $model =="strip" OR $model =="stripe1" OR $model =="strip1" OR $model =="color") {    
    $result = strpos ($support, 'set_rgb');
    if ($result) {  
     setGlobal($objName.".rgb",$rgb);
@@ -370,9 +377,8 @@ foreach ($bulbList_prop as $bulb) {
   } elseif ($model =="mono") {  }    
  }
 }
-  
-  parent::install();
- }
+
+}
  
  public function uninstall()
    {
