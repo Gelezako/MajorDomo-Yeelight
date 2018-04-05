@@ -266,7 +266,7 @@ else {
 		}
 	}
 	
-	if($model=="color") {$objDescription = array('Цветная лампочка');
+	if($model=="color" || $model=="color1") {$objDescription = array('Цветная лампочка');
 	 $rec = SQLSelectOne("SELECT ID FROM classes WHERE TITLE LIKE '" . DBSafe("Yeelight") . "'");
 		if (!$rec['ID']) {
 			$rec = array();
@@ -285,7 +285,7 @@ else {
 			}
 		}
 	}
-	if($model=="mono" ) {$objDescription = array('Белая лампочка');
+	if($model=="mono" || $model=="mono1") {$objDescription = array('Белая лампочка');
 	 $rec = SQLSelectOne("SELECT ID FROM classes WHERE TITLE LIKE '" . DBSafe("Yeelight") . "'");
 		if (!$rec['ID']) {
 			$rec = array();
@@ -326,7 +326,7 @@ else {
 		}
 	}
  
-   if($model=="bslamp") {
+   if($model=="bslamp" || $model=="bslamp1") {
 	$objDescription = array('Прикроватный ночник');
 	$rec = SQLSelectOne("SELECT ID FROM classes WHERE TITLE LIKE '" . DBSafe("Yeelight") . "'");
 		if (!$rec['ID']) {
@@ -347,7 +347,7 @@ else {
 		}
 	}
  
-    if($model=="lamp1" || $model=="lamp") {
+    if($model=="lamp" || $model=="lamp1") {
 	$objDescription = array('Настольная лампа');
 	$rec = SQLSelectOne("SELECT ID FROM classes WHERE TITLE LIKE '" . DBSafe("Yeelight") . "'");
 		if (!$rec['ID']) {
