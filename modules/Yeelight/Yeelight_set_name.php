@@ -1,4 +1,4 @@
-<?
+<?php
 //=======метод set_name(установка имени)=======================
 include_once(DIR_MODULES.'Yeelight/Yeelight_library.php');
 $Location = $this->getProperty('Location');
