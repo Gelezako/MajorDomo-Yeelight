@@ -1,4 +1,4 @@
-<?
+<?php
 //=======метод set_hsv (установка цвета Hsv)======================
 include_once(DIR_MODULES.'Yeelight/Yeelight_library.php');
 $Location = $this->getProperty('Location');
