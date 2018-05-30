@@ -1,4 +1,4 @@
-<?
+<?php
 //========= метод on_off (включение/выключение) ===================
 include_once(DIR_MODULES.'Yeelight/Yeelight_library.php');
 $Location = $this->getProperty('Location');
