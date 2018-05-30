@@ -1,4 +1,4 @@
-<?
+<?php
 //=======метод set_ct (установка цвета CT)=======================
 include_once(DIR_MODULES.'Yeelight/Yeelight_library.php');
 $Location = $this->getProperty('Location');
