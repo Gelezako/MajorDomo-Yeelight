@@ -1,9 +1,9 @@
 <?php
-//===========Lybrary=====================================================
 
+//===========Lybrary=====================================================
 //===========YeelightClient==============================================
-class YeelightClient	
-{
+class YeelightClient {
+
     /**
      * @var YeelightRawClient
      */
@@ -14,48 +14,150 @@ class YeelightClient
      *
      * @param int $readTimeout
      */
-    public function __construct($readTimeout = 1)
-    {
-        $socketFactory = new Factory();
-        $bulbFactory = new BulbFactory($socketFactory);
-        	$this->client = new YeelightRawClient(
-            $readTimeout,
-            $socketFactory->createUdp4(),
-            $bulbFactory
+    public function __construct($readTimeout=1) {
+        $socketFactory=new Factory();
+        $bulbFactory=new BulbFactory($socketFactory);
+        $this->client=new YeelightRawClient(
+                $readTimeout,$socketFactory->createUdp4(),$bulbFactory
         );
     }
+
     /**
      * @return Bulb[]
      *
      * @throws SocketException
      */
-    public function search()
-    {
+    public function search() {
         return $this->client->search();
     }
-	public function search_prop()
-    {
+
+    public function search_prop() {
         return $this->client->search_prop();
     }
+
+}
+
+class YeelightSocketServer {
+
+    const DISCOVERY_RESPONSE="M-SEARCH * HTTP/1.1\r\n".
+            "HOST: 239.255.255.250:1982\r\n".
+            "MAN: \"ssdp:discover\"\r\n".
+            "ST: wifi_bulb\r\n";
+    const MULTICAST_ADDRESS='239.255.255.250';
+    const MULTICAST_PORT=1982;
+    const NO_FLAG=0;
+    const PACKET_LENGTH=4096;
+
+    private $stream;
+    private $ip;
+    private $port;
+
+    public function __construct() {
+        
+    }
+
+    public function run() {
+        $this->stream=stream_socket_server("udp://0.0.0.0:".self::MULTICAST_PORT,$errno,$errstr,STREAM_SERVER_BIND);
+        if (!$this->stream) {
+            DebMes("$errstr ($errno)",'Yeelight');
+            exit;
+        }
+        $socket=socket_import_stream($this->stream);
+        if (!$socket) {
+            DebMes('Unable to import stream.','Yeelight');
+            exit;
+        }
+        if (!socket_set_option($socket,SOL_SOCKET,SO_REUSEADDR,1)) {
+            DebMes('Unable to enable SO_REUSEADDR','Yeelight');
+            exit;
+        }
+        if (!socket_set_option($socket,IPPROTO_IP,MCAST_JOIN_GROUP,['group'=>self::MULTICAST_ADDRESS,'interface'=>0])) {
+            DebMes('Unable to join multicast group','Yeelight');
+            exit;
+        }
+    }
+
+    public function getPacket(): YeelightPacket {
+        $pkt=stream_socket_recvfrom($this->stream,self::PACKET_LENGTH,0,$peer);
+        return new YeelightPacket($pkt,$peer);
+    }
+
+    public function sendMessage($message,$address) {
+        stream_socket_sendto($this->stream,$message,0,$address);
+    }
+
+    public function sendDiscover() {
+        $this->sendMessage(self::DISCOVERY_RESPONSE,$this->ip.':'.$this->port);
+    }
+
+    public function __destruct() {
+        fclose($this->stream);
+    }
+
+}
+
+class YeelightPacket {
+
+    private $peer;
+    private $header;
+    private $params;
+    private $isValid;
+
+    public function __construct(string $packet,string $peer) {
+        $this->params=[];
+        $this->isValid=true;
+        $this->peer=$peer;
+        $lines=explode("\r\n",$packet);
+        $this->header=array_shift($lines);
+        foreach ($lines as $line) {
+            $parts=explode(": ",$line,2);
+            if (sizeof($parts)==2) {
+                $this->params[$parts[0]]=$parts[1];
+            } else {
+                $error=true;
+            }
+        }
+    }
+
+    public function isValid(): bool {
+        return $this->isValid;
+    }
+
+    public function getPeer(): string {
+        return $this->peer;
+    }
+
+    public function getHeader(): string {
+        return $this->header;
+    }
+
+    public function getParams(): array {
+        return $this->params;
+    }
+
+    public function getParamsJson(): string {
+        return json_encode($this->params);
+    }
+
 }
 
 //=============YeelightRawClient===================================================
 
-class YeelightRawClient
-{
-    const DISCOVERY_RESPONSE = "M-SEARCH * HTTP/1.1\r\n    
-        HOST: 239.255.255.250:1982\r\n                     
-        MAN: \"ssdp:discover\"\r\n                         
-        ST: wifi_bulb\r\n";
-    const MULTICAST_ADDRESS = '239.255.255.250:1982';
-    const NO_FLAG = 0;
-    const PACKET_LENGTH = 4096;
+class YeelightRawClient {
+
+    const DISCOVERY_RESPONSE="M-SEARCH * HTTP/1.1\r\n".
+            "HOST: 239.255.255.250:1982\r\n".
+            "MAN: \"ssdp:discover\"\r\n".
+            "ST: wifi_bulb\r\n";
+    const MULTICAST_ADDRESS='239.255.255.250:1982';
+    const NO_FLAG=0;
+    const PACKET_LENGTH=4096;
 
     /**
      * @var Bulb[]
      */
-    private $bulbList = [];
-	private $bulbListProp = [];
+    private $bulbList=[];
+    private $bulbListProp=[];
 
     /**
      * @var int  
@@ -79,11 +181,10 @@ class YeelightRawClient
      * @param Socket      $socket
      * @param BulbFactory $bulbFactory
      */
-    public function __construct($readTimeout, Socket $socket, BulbFactory $bulbFactory)
-    {
-        $this->readTimeout = $readTimeout;
-        $this->socket = $socket;
-        $this->bulbFactory = $bulbFactory;
+    public function __construct($readTimeout,Socket $socket,BulbFactory $bulbFactory) {
+        $this->readTimeout=$readTimeout;
+        $this->socket=$socket;
+        $this->bulbFactory=$bulbFactory;
     }
 
     /**
@@ -93,31 +194,30 @@ class YeelightRawClient
      *
      * @throws SocketException
      */
-    public function search()
-    {
-        $this->socket->sendTo(self::DISCOVERY_RESPONSE, self::NO_FLAG, self::MULTICAST_ADDRESS);
+    public function search() {
+        $this->socket->sendTo(self::DISCOVERY_RESPONSE,self::NO_FLAG,self::MULTICAST_ADDRESS);
         $this->socket->setBlocking(false);
         while ($this->socket->selectRead($this->readTimeout)) {
-            $data = $this->formatResponse($this->socket->read(self::PACKET_LENGTH));
-            $bulb = $this->bulbFactory->create($data);
-            $this->bulbList[$bulb->getIp()] = $bulb;
+            $data=$this->formatResponse($this->socket->read(self::PACKET_LENGTH));
+            $bulb=$this->bulbFactory->create($data);
+            $this->bulbList[$bulb->getIp()]=$bulb;
         }
 
         return $this->bulbList;
     }
+
 //=========этот блок - переделка под чтение ВСЕХ свойств========================<
-    public function search_prop()
-    {
-        $this->socket->sendTo(self::DISCOVERY_RESPONSE, self::NO_FLAG, self::MULTICAST_ADDRESS);
+    public function search_prop() {
+        $this->socket->sendTo(self::DISCOVERY_RESPONSE,self::NO_FLAG,self::MULTICAST_ADDRESS);
         $this->socket->setBlocking(false);
         while ($this->socket->selectRead($this->readTimeout)) {
-            $data = $this->formatResponse($this->socket->read(self::PACKET_LENGTH));
-            $bulb = $this->bulbFactory->create($data);
-            $this->bulbList[$bulb->getIp()] = $bulb;
-			$this->bulbListProp[$bulb->getIp()] = $data;			
-        }        
-        
-		return $this->bulbListProp;
+            $data=$this->formatResponse($this->socket->read(self::PACKET_LENGTH));
+            $bulb=$this->bulbFactory->create($data);
+            $this->bulbList[$bulb->getIp()]=$bulb;
+            $this->bulbListProp[$bulb->getIp()]=$data;
+        }
+
+        return $this->bulbListProp;
     }
 
 //===============================================================================>
@@ -126,37 +226,40 @@ class YeelightRawClient
      *
      * @return array
      */
-    private function formatResponse($data)
-    {
-        return array_reduce(explode("\n", trim($data)), function ($carry, $item) {
-            $res = explode(':', $item, 2);
-            $carry[trim(reset($res))] = end($res);
+    private function formatResponse($data) {
+        return array_reduce(explode("\n",trim($data)),function ($carry,$item) {
+            $res=explode(':',$item,2);
+            $carry[trim(reset($res))]=end($res);
 
             return $carry;
-        }, []);
+        },[]);
     }
+
 }
+
 //============BulbProperties====================================================
-class BulbProperties
-{
-    const POWER = 'power';
-    const BRIGHT = 'bright';
-    const COLOR_TEMPERATURE = 'ct';
-    const RGB = 'rgb';
-    const HUE = 'hue';
-    const SATURATION = 'sat';
-    const COLOR_MODE = 'color_mode';
-    const FLOWING = 'flowing';
-    const DELAY_OFF = 'delayoff';
-    const FLOW_PARAMS= 'flow_params';
-    const MUSIC_ON = 'music_on';
-    const NAME = 'name';
+class BulbProperties {
+
+    const POWER='power';
+    const BRIGHT='bright';
+    const COLOR_TEMPERATURE='ct';
+    const RGB='rgb';
+    const HUE='hue';
+    const SATURATION='sat';
+    const COLOR_MODE='color_mode';
+    const FLOWING='flowing';
+    const DELAY_OFF='delayoff';
+    const FLOW_PARAMS='flow_params';
+    const MUSIC_ON='music_on';
+    const NAME='name';
+
 }
+
 //=============BulbFactory===================================================
-class BulbFactory
-{
-    const LOCATION = 'Location';
-    const ID = 'id';
+class BulbFactory {
+
+    const LOCATION='Location';
+    const ID='id';
 
     /**
      * @var Factory
@@ -168,9 +271,8 @@ class BulbFactory
      *
      * @param Factory $socketFactory
      */
-    public function __construct(Factory $socketFactory)
-    {
-        $this->socketFactory = $socketFactory;
+    public function __construct(Factory $socketFactory) {
+        $this->socketFactory=$socketFactory;
     }
 
     /**
@@ -178,49 +280,44 @@ class BulbFactory
      *
      * @return Bulb
      */
-    public function create($data)
-    {
-        list($ip, $port) = $this->extractIpAndPort($data[self::LOCATION]);
+    public function create($data) {
+        list($ip,$port)=$this->extractIpAndPort($data[self::LOCATION]);
 
         return new Bulb(
-            $this->socketFactory->createTcp4(),
-            $ip,
-            (int) $port,
-            trim($data[self::ID])
+                $this->socketFactory->createTcp4(),$ip,(int) $port,trim($data[self::ID])
         );
     }
-    
+
     /**
      * @param string $location
      *
      * @return array
      */
-    private function extractIpAndPort($location)
-    {
-        $address = explode('yeelight://', $location);
-        return explode(':', end($address));
+    private function extractIpAndPort($location) {
+        $address=explode('yeelight://',$location);
+        return explode(':',end($address));
     }
+
 }
 
 //=========Bulb=======================================================
-class Bulb
-{
-    const PACKET_LENGTH = 4096;
-    const NO_FLAG = 0;
+class Bulb {
 
-    const EFFECT_SUDDEN = 'sudden';
-    const EFFECT_SMOOTH = 'smooth';
-    const ON = 'on';
-    const OFF = 'off';
-    const ACTION_BEFORE = 0;
-    const ACTION_AFTER = 1;
-    const ACTION_TURN_OFF = 2;
-    const ADJUST_ACTION_INCREASE = 'increase';
-    const ADJUST_ACTION_DECREASE = 'decrease';
-    const ADJUST_ACTION_CIRCLE = 'circle';
-    const ADJUST_PROP_BRIGHTNESS = 'bright';
-    const ADJUST_PROP_COLOR_TEMP = 'ct';
-    const ADJUST_PROP_COLOR = 'color';
+    const PACKET_LENGTH=4096;
+    const NO_FLAG=0;
+    const EFFECT_SUDDEN='sudden';
+    const EFFECT_SMOOTH='smooth';
+    const ON='on';
+    const OFF='off';
+    const ACTION_BEFORE=0;
+    const ACTION_AFTER=1;
+    const ACTION_TURN_OFF=2;
+    const ADJUST_ACTION_INCREASE='increase';
+    const ADJUST_ACTION_DECREASE='decrease';
+    const ADJUST_ACTION_CIRCLE='circle';
+    const ADJUST_PROP_BRIGHTNESS='bright';
+    const ADJUST_PROP_COLOR_TEMP='ct';
+    const ADJUST_PROP_COLOR='color';
 
     /**
      * @var Socket
@@ -250,12 +347,11 @@ class Bulb
      * @param int    $port
      * @param string $id
      */
-    public function __construct(Socket $socket, $ip, $port, $id)
-    {
-        $this->socket = $socket;
-        $this->ip = $ip;
-        $this->port = $port;
-        $this->id = $id;
+    public function __construct(Socket $socket,$ip,$port,$id) {
+        $this->socket=$socket;
+        $this->ip=$ip;
+        $this->port=$port;
+        $this->id=$id;
 
         $this->socket->connect($this->getAddress());
     }
@@ -263,24 +359,21 @@ class Bulb
     /**
      * @return string
      */
-    public function getAddress()
-    {
-        return sprintf('%s:%d', $this->getIp(), $this->getPort());
+    public function getAddress() {
+        return sprintf('%s:%d',$this->getIp(),$this->getPort());
     }
 
     /**
      * @return string
      */
-    public function getIp()
-    {
+    public function getIp() {
         return $this->ip;
     }
 
     /**
      * @return int
      */
-    public function getPort()
-    {
+    public function getPort() {
         return $this->port;
     }
 
@@ -288,17 +381,16 @@ class Bulb
      * Метод используется для получения текущих свойств smart LED
      *
      * @param array $properties Параметр представляет собой список имен свойств (констант из BulbProperties), 
-	 *                          ответ содержит список соответствующих значений свойств. Если запрошенное имя свойства 
-	 *                          не признается smart LED, то возвращается значение пустой строки ("").	 
+     *                          ответ содержит список соответствующих значений свойств. Если запрошенное имя свойства 
+     *                          не признается smart LED, то возвращается значение пустой строки ("").	 
      *
      * @return Promise
      */
-    public function getProp($properties)
-    {
-        $data = [
-            'id' => hexdec($this->getId()),
-            'method' => 'get_prop',
-            'params' => $properties,
+    public function getProp($properties) {
+        $data=[
+            'id'=>hexdec($this->getId()),
+            'method'=>'get_prop',
+            'params'=>$properties,
         ];
         $this->send($data);
         return $this->read();
@@ -307,54 +399,51 @@ class Bulb
     /**
      * @return string
      */
-    public function getId()
-    {
+    public function getId() {
         return $this->id;
     }
 
     /**
      * @param array $data
      */
-    private function send($data)
-    {
-        $data = json_encode($data) . "\r\n";
-        $this->socket->send($data, self::NO_FLAG);        
+    private function send($data) {
+        $data=json_encode($data)."\r\n";
+        $this->socket->send($data,self::NO_FLAG);
     }
 
-   	private function read()
-    {
-        $resp =  json_decode($this->socket->read(self::PACKET_LENGTH), true); 
-        return $this->read = $resp;
+    private function read() {
+        $resp=json_decode($this->socket->read(self::PACKET_LENGTH),true);
+        return $this->read=$resp;
         //$response = new Response(
         //        json_decode($this->socket->read(self::PACKET_LENGTH), true)
         //    );
         //$this-> Response->getDeviceId();
         //$this-> response->getResult();        
-	}
-	
-	/**
+    }
+
+    /**
      * @return Promise
      */
     //++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-	/**	
-	*private function read(): Promise
-    *{
-    *    return new Promise(function (callable $resolve, callable $reject) {
-    *        $response = new Response(
-    *            json_decode($this->socket->read(self::PACKET_LENGTH), true)
-    *        );
-	*
-	*            if ($response->isSuccess()) {
-	*                $resolve($response);
-	*
-	*                return;
-	*            }
-	*            $reject($response->getException());
-	*        });
-    *}
-	*/
-	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-	
+    /** 	
+     * private function read(): Promise
+     * {
+     *    return new Promise(function (callable $resolve, callable $reject) {
+     *        $response = new Response(
+     *            json_decode($this->socket->read(self::PACKET_LENGTH), true)
+     *        );
+     *
+     *            if ($response->isSuccess()) {
+     *                $resolve($response);
+     *
+     *                return;
+     *            }
+     *            $reject($response->getException());
+     *        });
+     * }
+     */
+    //++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
     /**
      * Этот метод используется для изменения цветовой температуры smart LED
      *
@@ -364,12 +453,11 @@ class Bulb
      *
      * @return Promise
      */
-    public function setCtAbx($ctValue, $effect, $duration)
-    {
-        $data = [
-            'id' => hexdec($this->getId()),
-            'method' => 'set_ct_abx',
-            'params' => [
+    public function setCtAbx($ctValue,$effect,$duration) {
+        $data=[
+            'id'=>hexdec($this->getId()),
+            'method'=>'set_ct_abx',
+            'params'=>[
                 $ctValue,
                 $effect,
                 $duration,
@@ -390,12 +478,11 @@ class Bulb
      *
      * @return Promise
      */
-    public function setRgb($rgbValue, $effect, $duration)
-    {
-        $data = [
-            'id' => hexdec($this->getId()),
-            'method' => 'set_rgb',
-            'params' => [
+    public function setRgb($rgbValue,$effect,$duration) {
+        $data=[
+            'id'=>hexdec($this->getId()),
+            'method'=>'set_rgb',
+            'params'=>[
                 $rgbValue,
                 $effect,
                 $duration,
@@ -416,12 +503,11 @@ class Bulb
      *
      * @return Promise
      */
-    public function setHsv($hue, $sat, $effect, $duration)
-    {
-        $data = [
-            'id' => hexdec($this->getId()),
-            'method' => 'set_hsv',
-            'params' => [
+    public function setHsv($hue,$sat,$effect,$duration) {
+        $data=[
+            'id'=>hexdec($this->getId()),
+            'method'=>'set_hsv',
+            'params'=>[
                 $hue,
                 $sat,
                 $effect,
@@ -435,7 +521,7 @@ class Bulb
 
     /**
      * Далее методы аналогично руководству
-	 * This method is used to change the brightness of a smart LED (яркость)
+     * This method is used to change the brightness of a smart LED (яркость)
      *
      * @param int    $brightness is the target brightness. The type is integer and ranges from 1 to 100. The brightness
      *                           is a percentage instead of a absolute value.
@@ -444,12 +530,11 @@ class Bulb
      *
      * @return Promise
      */
-    public function setBright($brightness, $effect, $duration)
-    {
-        $data = [
-            'id' => hexdec($this->getId()),
-            'method' => 'set_bright',
-            'params' => [
+    public function setBright($brightness,$effect,$duration) {
+        $data=[
+            'id'=>hexdec($this->getId()),
+            'method'=>'set_bright',
+            'params'=>[
                 $brightness,
                 $effect,
                 $duration,
@@ -470,12 +555,11 @@ class Bulb
      *
      * @return Promise
      */
-    public function setPower($power, $effect, $duration)
-    {
-        $data = [
-            'id' => hexdec($this->getId()),
-            'method' => 'set_power',
-            'params' => [
+    public function setPower($power,$effect,$duration) {
+        $data=[
+            'id'=>hexdec($this->getId()),
+            'method'=>'set_power',
+            'params'=>[
                 $power,
                 $effect,
                 $duration,
@@ -491,12 +575,11 @@ class Bulb
      *
      * @return Promise
      */
-    public function toggle()
-    {
-        $data = [
-            'id' => hexdec($this->getId()),
-            'method' => 'toggle',
-            'params' => [],
+    public function toggle() {
+        $data=[
+            'id'=>hexdec($this->getId()),
+            'method'=>'toggle',
+            'params'=>[],
         ];
         $this->send($data);
 
@@ -509,12 +592,11 @@ class Bulb
      * сохранение текущего состояния в качестве "по умолчанию"
      * @return Promise
      */
-    public function setDefault()
-    {
-        $data = [
-            'id' => hexdec($this->getId()),
-            'method' => 'set_default',
-            'params' => [],
+    public function setDefault() {
+        $data=[
+            'id'=>hexdec($this->getId()),
+            'method'=>'set_default',
+            'params'=>[],
         ];
         $this->send($data);
 
@@ -539,15 +621,14 @@ class Bulb
      *
      * @return Promise
      */
-    public function startCf($count, $action, $flowExpression)
-    {
-        $state = implode(",", array_map(function ($item) {
-            return implode(",", $item);
-        }, $flowExpression));
-        $data = [
-            'id' => hexdec($this->getId()),
-            'method' => 'start_cf',
-            'params' => [
+    public function startCf($count,$action,$flowExpression) {
+        $state=implode(",",array_map(function ($item) {
+                    return implode(",",$item);
+                },$flowExpression));
+        $data=[
+            'id'=>hexdec($this->getId()),
+            'method'=>'start_cf',
+            'params'=>[
                 $count,
                 $action,
                 $state,
@@ -563,12 +644,11 @@ class Bulb
      * остановка текущего цветового потока
      * @return Promise
      */
-    public function stopCf()
-    {
-        $data = [
-            'id' => hexdec($this->getId()),
-            'method' => 'stop_cf',
-            'params' => [],
+    public function stopCf() {
+        $data=[
+            'id'=>hexdec($this->getId()),
+            'method'=>'stop_cf',
+            'params'=>[],
         ];
         $this->send($data);
 
@@ -589,12 +669,11 @@ class Bulb
      *
      * @return Promise
      */
-    public function setScene($params)
-    {
-        $data = [
-            'id' => hexdec($this->getId()),
-            'method' => 'set_scene',
-            'params' => $params,
+    public function setScene($params) {
+        $data=[
+            'id'=>hexdec($this->getId()),
+            'method'=>'set_scene',
+            'params'=>$params,
         ];
         $this->send($data);
 
@@ -609,12 +688,11 @@ class Bulb
      *
      * @return Promise
      */
-    public function cronAdd($type, $value)
-    {
-        $data = [
-            'id' => hexdec($this->getId()),
-            'method' => 'cron_add',
-            'params' => [
+    public function cronAdd($type,$value) {
+        $data=[
+            'id'=>hexdec($this->getId()),
+            'method'=>'cron_add',
+            'params'=>[
                 $type,
                 $value,
             ],
@@ -631,12 +709,11 @@ class Bulb
      *
      * @return Promise
      */
-    public function cronGet($type)
-    {
-        $data = [
-            'id' => hexdec($this->getId()),
-            'method' => 'cron_get',
-            'params' => [
+    public function cronGet($type) {
+        $data=[
+            'id'=>hexdec($this->getId()),
+            'method'=>'cron_get',
+            'params'=>[
                 $type,
             ],
         ];
@@ -652,12 +729,11 @@ class Bulb
      *
      * @return Promise
      */
-    public function cronDel($type)
-    {
-        $data = [
-            'id' => hexdec($this->getId()),
-            'method' => 'cron_del',
-            'params' => [
+    public function cronDel($type) {
+        $data=[
+            'id'=>hexdec($this->getId()),
+            'method'=>'cron_del',
+            'params'=>[
                 $type,
             ],
         ];
@@ -683,12 +759,11 @@ class Bulb
      *
      * @return Promise
      */
-    public function setAdjust($action, $prop)
-    {
-        $data = [
-            'id' => hexdec($this->getId()),
-            'method' => 'set_adjust',
-            'params' => [
+    public function setAdjust($action,$prop) {
+        $data=[
+            'id'=>hexdec($this->getId()),
+            'method'=>'set_adjust',
+            'params'=>[
                 $action,
                 $prop,
             ],
@@ -707,24 +782,23 @@ class Bulb
      *
      * @return Promise
      */
-    public function setMusic($action, $host = null, $port = null)
-    {
-        $params = [
+    public function setMusic($action,$host=null,$port=null) {
+        $params=[
             $action,
         ];
 
         if (!is_null($host)) {
-            $params[] = $host;
+            $params[]=$host;
         }
 
         if (!is_null($port)) {
-            $params[] = $port;
+            $params[]=$port;
         }
 
-        $data = [
-            'id' => hexdec($this->getId()),
-            'method' => 'set_music',
-            'params' => $params,
+        $data=[
+            'id'=>hexdec($this->getId()),
+            'method'=>'set_music',
+            'params'=>$params,
         ];
         $this->send($data);
 
@@ -738,12 +812,11 @@ class Bulb
      *
      * @return Promise
      */
-    public function setName($name)
-    {
-        $data = [
-            'id' => hexdec($this->getId()),
-            'method' => 'set_name',
-            'params' => [
+    public function setName($name) {
+        $data=[
+            'id'=>hexdec($this->getId()),
+            'method'=>'set_name',
+            'params'=>[
                 $name,
             ],
         ];
@@ -751,15 +824,14 @@ class Bulb
 
         return $this->read();
     }
+
 }
 
 //================================================================
-
 //==============add lybrary========================================	
-
 //=============Socket==============================================
-class Socket
-{
+class Socket {
+
     /**
      * reference to actual socket resource
      *
@@ -775,9 +847,8 @@ class Socket
      * @param resource $resource
      * @see Factory as the preferred (and simplest) way to construct socket instances
      */
-    public function __construct($resource)
-    {
-        $this->resource = $resource;
+    public function __construct($resource) {
+        $this->resource=$resource;
     }
 
     /**
@@ -785,8 +856,7 @@ class Socket
      *
      * @return resource
      */
-    public function getResource()
-    {
+    public function getResource() {
         return $this->resource;
     }
 
@@ -800,10 +870,9 @@ class Socket
      * @see self::listen() has to be called first
      * @uses socket_accept()
      */
-    public function accept()
-    {
-        $resource = @socket_accept($this->resource);
-        if ($resource === false) {
+    public function accept() {
+        $resource=@socket_accept($this->resource);
+        if ($resource===false) {
             throw Exception::createFromGlobalSocketOperation();
         }
         return new Socket($resource);
@@ -819,10 +888,9 @@ class Socket
      * @throws Exception on error
      * @uses socket_bind()
      */
-    public function bind($address)
-    {
-        $ret = @socket_bind($this->resource, $this->unformatAddress($address, $port), $port);
-        if ($ret === false) {
+    public function bind($address) {
+        $ret=@socket_bind($this->resource,$this->unformatAddress($address,$port),$port);
+        if ($ret===false) {
             throw Exception::createFromSocketResource($this->resource);
         }
         return $this;
@@ -838,8 +906,7 @@ class Socket
      * @see self::shutdown() should be called before closing socket
      * @uses socket_close()
      */
-    public function close()
-    {
+    public function close() {
         socket_close($this->resource);
         return $this;
     }
@@ -852,10 +919,9 @@ class Socket
      * @throws Exception on error
      * @uses socket_connect()
      */
-    public function connect($address)
-    {
-        $ret = @socket_connect($this->resource, $this->unformatAddress($address, $port), $port);
-        if ($ret === false) {
+    public function connect($address) {
+        $ret=@socket_connect($this->resource,$this->unformatAddress($address,$port),$port);
+        if ($ret===false) {
             throw Exception::createFromSocketResource($this->resource);
         }
         return $this;
@@ -881,8 +947,7 @@ class Socket
      * @uses self::selectWrite() to wait for the connection to complete
      * @uses self::assertAlive() to check connection state
      */
-    public function connectTimeout($address, $timeout)
-    {
+    public function connectTimeout($address,$timeout) {
         $this->setBlocking(false);
 
         try {
@@ -891,16 +956,15 @@ class Socket
 
             // socket is already connected immediately?
             return $this;
-        }
-        catch (Exception $e) {
+        } catch (Exception $e) {
             // non-blocking connect() should be EINPROGRESS => otherwise re-throw
-            if ($e->getCode() !== SOCKET_EINPROGRESS) {
+            if ($e->getCode()!==SOCKET_EINPROGRESS) {
                 throw $e;
             }
 
             // connection should be completed (or rejected) within timeout
-            if ($this->selectWrite($timeout) === false) {
-                throw new Exception('Timed out while waiting for connection', SOCKET_ETIMEDOUT);
+            if ($this->selectWrite($timeout)===false) {
+                throw new Exception('Timed out while waiting for connection',SOCKET_ETIMEDOUT);
             }
 
             // confirm connection success (or fail if connected has been rejected)
@@ -919,10 +983,9 @@ class Socket
      * @throws Exception on error
      * @uses socket_get_option()
      */
-    public function getOption($level, $optname)
-    {
-        $value = @socket_get_option($this->resource, $level, $optname);
-        if ($value === false) {
+    public function getOption($level,$optname) {
+        $value=@socket_get_option($this->resource,$level,$optname);
+        if ($value===false) {
             throw Exception::createFromSocketResource($this->resource);
         }
         return $value;
@@ -935,13 +998,12 @@ class Socket
      * @throws Exception on error
      * @uses socket_getpeername()
      */
-    public function getPeerName()
-    {
-        $ret = @socket_getpeername($this->resource, $address, $port);
-        if ($ret === false) {
+    public function getPeerName() {
+        $ret=@socket_getpeername($this->resource,$address,$port);
+        if ($ret===false) {
             throw Exception::createFromSocketResource($this->resource);
         }
-        return $this->formatAddress($address, $port);
+        return $this->formatAddress($address,$port);
     }
 
     /**
@@ -951,13 +1013,12 @@ class Socket
      * @throws Exception on error
      * @uses socket_getsockname()
      */
-    public function getSockName()
-    {
-        $ret = @socket_getsockname($this->resource, $address, $port);
-        if ($ret === false) {
+    public function getSockName() {
+        $ret=@socket_getsockname($this->resource,$address,$port);
+        if ($ret===false) {
             throw Exception::createFromSocketResource($this->resource);
         }
-        return $this->formatAddress($address, $port);
+        return $this->formatAddress($address,$port);
     }
 
     /**
@@ -969,10 +1030,9 @@ class Socket
      * @see self::bind() has to be called first to bind name to socket
      * @uses socket_listen()
      */
-    public function listen($backlog = 0)
-    {
-        $ret = @socket_listen($this->resource, $backlog);
-        if ($ret === false) {
+    public function listen($backlog=0) {
+        $ret=@socket_listen($this->resource,$backlog);
+        if ($ret===false) {
             throw Exception::createFromSocketResource($this->resource);
         }
         return $this;
@@ -991,10 +1051,9 @@ class Socket
      * @see self::recv() if you need to pass flags
      * @uses socket_read()
      */
-    public function read($length, $type = PHP_BINARY_READ)
-    {
-        $data = @socket_read($this->resource, $length, $type);
-        if ($data === false) {
+    public function read($length,$type=PHP_BINARY_READ) {
+        $data=@socket_read($this->resource,$length,$type);
+        if ($data===false) {
             throw Exception::createFromSocketResource($this->resource);
         }
         return $data;
@@ -1011,10 +1070,9 @@ class Socket
      * @see self::recvFrom() if your socket is not connect()ed
      * @uses socket_recv()
      */
-    public function recv($length, $flags)
-    {
-        $ret = @socket_recv($this->resource, $buffer, $length, $flags);
-        if ($ret === false) {
+    public function recv($length,$flags) {
+        $ret=@socket_recv($this->resource,$buffer,$length,$flags);
+        if ($ret===false) {
             throw Exception::createFromSocketResource($this->resource);
         }
         return $buffer;
@@ -1031,13 +1089,12 @@ class Socket
      * @see self::recv() if your socket is connect()ed
      * @uses socket_recvfrom()
      */
-    public function recvFrom($length, $flags, &$remote)
-    {
-        $ret = @socket_recvfrom($this->resource, $buffer, $length, $flags, $address, $port);
-        if ($ret === false) {
+    public function recvFrom($length,$flags,&$remote) {
+        $ret=@socket_recvfrom($this->resource,$buffer,$length,$flags,$address,$port);
+        if ($ret===false) {
             throw Exception::createFromSocketResource($this->resource);
         }
-        $remote = $this->formatAddress($address, $port);
+        $remote=$this->formatAddress($address,$port);
         return $buffer;
     }
 
@@ -1049,12 +1106,11 @@ class Socket
      * @throws Exception on error
      * @uses socket_select()
      */
-    public function selectRead($sec = 0)
-    {
-        $usec = $sec === null ? null : (($sec - floor($sec)) * 1000000);
-        $r = array($this->resource);
-        $ret = @socket_select($r, $x, $x, $sec, $usec);
-        if ($ret === false) {
+    public function selectRead($sec=0) {
+        $usec=$sec===null?null:(($sec-floor($sec))*1000000);
+        $r=array($this->resource);
+        $ret=@socket_select($r,$x,$x,$sec,$usec);
+        if ($ret===false) {
             throw Exception::createFromGlobalSocketOperation('Failed to select socket for reading');
         }
         return !!$ret;
@@ -1068,12 +1124,11 @@ class Socket
      * @throws Exception on error
      * @uses socket_select()
      */
-    public function selectWrite($sec = 0)
-    {
-        $usec = $sec === null ? null : (($sec - floor($sec)) * 1000000);
-        $w = array($this->resource);
-        $ret = @socket_select($x, $w, $x, $sec, $usec);
-        if ($ret === false) {
+    public function selectWrite($sec=0) {
+        $usec=$sec===null?null:(($sec-floor($sec))*1000000);
+        $w=array($this->resource);
+        $ret=@socket_select($x,$w,$x,$sec,$usec);
+        if ($ret===false) {
             throw Exception::createFromGlobalSocketOperation('Failed to select socket for writing');
         }
         return !!$ret;
@@ -1090,10 +1145,9 @@ class Socket
      * @see self::sendTo() if your socket is not connect()ed
      * @uses socket_send()
      */
-    public function send($buffer, $flags)
-    {
-        $ret = @socket_send($this->resource, $buffer, strlen($buffer), $flags);
-        if ($ret === false) {
+    public function send($buffer,$flags) {
+        $ret=@socket_send($this->resource,$buffer,strlen($buffer),$flags);
+        if ($ret===false) {
             throw Exception::createFromSocketResource($this->resource);
         }
         return $ret;
@@ -1110,10 +1164,9 @@ class Socket
      * @see self::send() if your socket is connect()ed
      * @uses socket_sendto()
      */
-    public function sendTo($buffer, $flags, $remote)
-    {
-        $ret = @socket_sendto($this->resource, $buffer, strlen($buffer), $flags, $this->unformatAddress($remote, $port), $port);
-        if ($ret === false) {
+    public function sendTo($buffer,$flags,$remote) {
+        $ret=@socket_sendto($this->resource,$buffer,strlen($buffer),$flags,$this->unformatAddress($remote,$port),$port);
+        if ($ret===false) {
             throw Exception::createFromSocketResource($this->resource);
         }
         return $ret;
@@ -1128,10 +1181,9 @@ class Socket
      * @uses socket_set_block()
      * @uses socket_set_nonblock()
      */
-    public function setBlocking($toggle = true)
-    {
-        $ret = $toggle ? @socket_set_block($this->resource) : @socket_set_nonblock($this->resource);
-        if ($ret === false) {
+    public function setBlocking($toggle=true) {
+        $ret=$toggle?@socket_set_block($this->resource):@socket_set_nonblock($this->resource);
+        if ($ret===false) {
             throw Exception::createFromSocketResource($this->resource);
         }
         return $this;
@@ -1148,10 +1200,9 @@ class Socket
      * @see self::getOption()
      * @uses socket_set_option()
      */
-    public function setOption($level, $optname, $optval)
-    {
-        $ret = @socket_set_option($this->resource, $level, $optname, $optval);
-        if ($ret === false) {
+    public function setOption($level,$optname,$optval) {
+        $ret=@socket_set_option($this->resource,$level,$optname,$optval);
+        if ($ret===false) {
             throw Exception::createFromSocketResource($this->resource);
         }
         return $this;
@@ -1166,10 +1217,9 @@ class Socket
      * @see self::close()
      * @uses socket_shutdown()
      */
-    public function shutdown($how = 2)
-    {
-        $ret = @socket_shutdown($this->resource, $how);
-        if ($ret === false) {
+    public function shutdown($how=2) {
+        $ret=@socket_shutdown($this->resource,$how);
+        if ($ret===false) {
             throw Exception::createFromSocketResource($this->resource);
         }
         return $this;
@@ -1184,10 +1234,9 @@ class Socket
      * @see self::send() if you need to pass flags
      * @uses socket_write()
      */
-    public function write($buffer)
-    {
-        $ret = @socket_write($this->resource, $buffer);
-        if ($ret === false) {
+    public function write($buffer) {
+        $ret=@socket_write($this->resource,$buffer);
+        if ($ret===false) {
             throw Exception::createFromSocketResource($this->resource);
         }
         return $ret;
@@ -1200,9 +1249,8 @@ class Socket
      * @throws Exception on error
      * @uses self::getOption()
      */
-    public function getType()
-    {
-        return $this->getOption(SOL_SOCKET, SO_TYPE);
+    public function getType() {
+        return $this->getOption(SOL_SOCKET,SO_TYPE);
     }
 
     /**
@@ -1223,11 +1271,10 @@ class Socket
      * @uses self::getOption() to retrieve and clear current error code
      * @uses self::getErrorMessage() to translate error code to
      */
-    public function assertAlive()
-    {
-        $code = $this->getOption(SOL_SOCKET, SO_ERROR);
-        if ($code !== 0) {
-            throw Exception::createFromCode($code, 'Socket error');
+    public function assertAlive() {
+        $code=$this->getOption(SOL_SOCKET,SO_ERROR);
+        if ($code!==0) {
+            throw Exception::createFromCode($code,'Socket error');
         }
         return $this;
     }
@@ -1239,13 +1286,12 @@ class Socket
      * @param int    $port
      * @return string
      */
-    protected function formatAddress($address, $port)
-    {
-        if ($port !== 0) {
-            if (strpos($address, ':') !== false) {
-                $address = '[' . $address . ']';
+    protected function formatAddress($address,$port) {
+        if ($port!==0) {
+            if (strpos($address,':')!==false) {
+                $address='['.$address.']';
             }
-            $address .= ':' . $port;
+            $address.=':'.$port;
         }
         return $address;
     }
@@ -1257,40 +1303,38 @@ class Socket
      * @param int $port
      * @return string address with port removed
      */
-    protected function unformatAddress($address, &$port)
-    {
+    protected function unformatAddress($address,&$port) {
         // [::1]:2 => ::1 2
         // test:2 => test 2
         // ::1 => ::1
         // test => test
 
-        $colon = strrpos($address, ':');
+        $colon=strrpos($address,':');
 
         // there is a colon and this is the only colon or there's a closing IPv6 bracket right before it
-        if ($colon !== false && (strpos($address, ':') === $colon || strpos($address, ']') === ($colon - 1))) {
-            $port = (int)substr($address, $colon + 1);
-            $address = substr($address, 0, $colon);
+        if ($colon!==false&&(strpos($address,':')===$colon||strpos($address,']')===($colon-1))) {
+            $port=(int) substr($address,$colon+1);
+            $address=substr($address,0,$colon);
 
             // remove IPv6 square brackets
-            if (substr($address, 0, 1) === '[') {
-                $address = substr($address, 1, -1);
+            if (substr($address,0,1)==='[') {
+                $address=substr($address,1,-1);
             }
         }
         return $address;
     }
+
 }
 
 //=============Factory===================================================
-class Factory
-{
-    public function createClient($address)
-    {
-        $socket = $this->createFromString($address, $scheme);
+class Factory {
+
+    public function createClient($address) {
+        $socket=$this->createFromString($address,$scheme);
 
         try {
             $socket->connect($address);
-        }
-        catch (Exception $e) {
+        } catch (Exception $e) {
             $socket->close();
             throw $e;
         }
@@ -1308,18 +1352,16 @@ class Factory
      * @uses Socket::bind()
      * @uses Socket::listen() only for stream sockets (TCP/UNIX)
      */
-    public function createServer($address)
-    {
-        $socket = $this->createFromString($address, $scheme);
+    public function createServer($address) {
+        $socket=$this->createFromString($address,$scheme);
 
         try {
             $socket->bind($address);
 
-            if ($socket->getType() === SOCK_STREAM) {
+            if ($socket->getType()===SOCK_STREAM) {
                 $socket->listen();
             }
-        }
-        catch (Exception $e) {
+        } catch (Exception $e) {
             $socket->close();
             throw $e;
         }
@@ -1334,9 +1376,8 @@ class Factory
      * @throws Exception on error
      * @uses self::create()
      */
-    public function createTcp4()
-    {
-        return $this->create(AF_INET, SOCK_STREAM, SOL_TCP);
+    public function createTcp4() {
+        return $this->create(AF_INET,SOCK_STREAM,SOL_TCP);
     }
 
     /**
@@ -1346,9 +1387,8 @@ class Factory
      * @throws Exception on error
      * @uses self::create()
      */
-    public function createTcp6()
-    {
-        return $this->create(AF_INET6, SOCK_STREAM, SOL_TCP);
+    public function createTcp6() {
+        return $this->create(AF_INET6,SOCK_STREAM,SOL_TCP);
     }
 
     /**
@@ -1358,9 +1398,8 @@ class Factory
      * @throws Exception on error
      * @uses self::create()
      */
-    public function createUdp4()
-    {
-        return $this->create(AF_INET, SOCK_DGRAM, SOL_UDP);
+    public function createUdp4() {
+        return $this->create(AF_INET,SOCK_DGRAM,SOL_UDP);
     }
 
     /**
@@ -1370,9 +1409,8 @@ class Factory
      * @throws Exception on error
      * @uses self::create()
      */
-    public function createUdp6()
-    {
-        return $this->create(AF_INET6, SOCK_DGRAM, SOL_UDP);
+    public function createUdp6() {
+        return $this->create(AF_INET6,SOCK_DGRAM,SOL_UDP);
     }
 
     /**
@@ -1382,9 +1420,8 @@ class Factory
      * @throws Exception on error
      * @uses self::create()
      */
-    public function createUnix()
-    {
-        return $this->create(AF_UNIX, SOCK_STREAM, 0);
+    public function createUnix() {
+        return $this->create(AF_UNIX,SOCK_STREAM,0);
     }
 
     /**
@@ -1394,9 +1431,8 @@ class Factory
      * @throws Exception on error
      * @uses self::create()
      */
-    public function createUdg()
-    {
-        return $this->create(AF_UNIX, SOCK_DGRAM, 0);
+    public function createUdg() {
+        return $this->create(AF_UNIX,SOCK_DGRAM,0);
     }
 
     /**
@@ -1406,9 +1442,8 @@ class Factory
      * @throws Exception on error
      * @uses self::create()
      */
-    public function createIcmp4()
-    {
-        return $this->create(AF_INET, SOCK_RAW, getprotobyname('icmp'));
+    public function createIcmp4() {
+        return $this->create(AF_INET,SOCK_RAW,getprotobyname('icmp'));
     }
 
     /**
@@ -1418,9 +1453,8 @@ class Factory
      * @throws Exception on error
      * @uses self::create()
      */
-    public function createIcmp6()
-    {
-        return $this->create(AF_INET6, SOCK_RAW, 58 /*getprotobyname('icmp')*/);
+    public function createIcmp6() {
+        return $this->create(AF_INET6,SOCK_RAW,58 /* getprotobyname('icmp') */);
     }
 
     /**
@@ -1433,10 +1467,9 @@ class Factory
      * @throws Exception if creating socket fails
      * @uses socket_create()
      */
-    public function create($domain, $type, $protocol)
-    {
-        $sock = @socket_create($domain, $type, $protocol);
-        if ($sock === false) {
+    public function create($domain,$type,$protocol) {
+        $sock=@socket_create($domain,$type,$protocol);
+        if ($sock===false) {
             throw Exception::createFromGlobalSocketOperation('Unable to create socket');
         }
         return new Socket($sock);
@@ -1452,13 +1485,12 @@ class Factory
      * @throws Exception if creating pair of sockets fails
      * @uses socket_create_pair()
      */
-    public function createPair($domain, $type, $protocol)
-    {
-        $ret = @socket_create_pair($domain, $type, $protocol, $pair);
-        if ($ret === false) {
+    public function createPair($domain,$type,$protocol) {
+        $ret=@socket_create_pair($domain,$type,$protocol,$pair);
+        if ($ret===false) {
             throw Exception::createFromGlobalSocketOperation('Unable to create pair of sockets');
         }
-        return array(new Socket($pair[0]), new Socket($pair[1]));
+        return array(new Socket($pair[0]),new Socket($pair[1]));
     }
 
     /**
@@ -1471,10 +1503,9 @@ class Factory
      * @uses socket_create_listen()
      * @see self::createServer() as an alternative to bind to specific IP, IPv6, UDP, UNIX, UGP
      */
-    public function createListen($port, $backlog = 128)
-    {
-        $sock = @socket_create_listen($port, $backlog);
-        if ($sock === false) {
+    public function createListen($port,$backlog=128) {
+        $sock=@socket_create_listen($port,$backlog);
+        if ($sock===false) {
             throw Exception::createFromGlobalSocketOperation('Unable to create listening socket');
         }
         return new Socket($sock);
@@ -1490,54 +1521,55 @@ class Factory
      * @throws Exception in case creating socket failed
      * @uses self::createTcp4() etc.
      */
-    public function createFromString(&$address, &$scheme)
-    {
-        if ($scheme === null) {
-            $scheme = 'tcp';
+    public function createFromString(&$address,&$scheme) {
+        if ($scheme===null) {
+            $scheme='tcp';
         }
 
-        $hasScheme = false;
+        $hasScheme=false;
 
-        $pos = strpos($address, '://');
-        if ($pos !== false) {
-            $scheme = substr($address, 0, $pos);
-            $address = substr($address, $pos + 3);
-            $hasScheme = true;
+        $pos=strpos($address,'://');
+        if ($pos!==false) {
+            $scheme=substr($address,0,$pos);
+            $address=substr($address,$pos+3);
+            $hasScheme=true;
         }
 
-        if (strpos($address, ':') !== strrpos($address, ':') && in_array($scheme, array('tcp', 'udp', 'icmp'))) {
+        if (strpos($address,':')!==strrpos($address,':')&&in_array($scheme,array('tcp','udp','icmp'))) {
             // TCP/UDP/ICMP address with several colons => must be IPv6
-            $scheme .= '6';
+            $scheme.='6';
         }
 
-        if ($scheme === 'tcp') {
-            $socket = $this->createTcp4();
-        } elseif ($scheme === 'udp') {
-            $socket = $this->createUdp4();
-        } elseif ($scheme === 'tcp6') {
-            $socket = $this->createTcp6();
-        } elseif ($scheme === 'udp6') {
-            $socket = $this->createUdp6();
-        } elseif ($scheme === 'unix') {
-            $socket = $this->createUnix();
-        } elseif ($scheme === 'udg') {
-            $socket = $this->createUdg();
-        } elseif ($scheme === 'icmp') {
-            $socket = $this->createIcmp4();
-        } elseif ($scheme === 'icmp6') {
-            $socket = $this->createIcmp6();
+        if ($scheme==='tcp') {
+            $socket=$this->createTcp4();
+        } elseif ($scheme==='udp') {
+            $socket=$this->createUdp4();
+        } elseif ($scheme==='tcp6') {
+            $socket=$this->createTcp6();
+        } elseif ($scheme==='udp6') {
+            $socket=$this->createUdp6();
+        } elseif ($scheme==='unix') {
+            $socket=$this->createUnix();
+        } elseif ($scheme==='udg') {
+            $socket=$this->createUdg();
+        } elseif ($scheme==='icmp') {
+            $socket=$this->createIcmp4();
+        } elseif ($scheme==='icmp6') {
+            $socket=$this->createIcmp6();
             if ($hasScheme) {
                 // scheme was stripped from address, resulting IPv6 must not
                 // have a port (due to ICMP) and thus must not be enclosed in
                 // square brackets
-                $address = trim($address, '[]');
+                $address=trim($address,'[]');
             }
         } else {
             throw new InvalidArgumentException('Invalid address scheme given');
         }
         return $socket;
     }
+
 }
+
 //================================================================
 //class SocketException extends \Exception
 //{
@@ -1549,8 +1581,8 @@ class Factory
 //{
 //}
 //===========Response (обработка ответа от устройства - нафиг, мне проще в запросе обработать)============================
-class Response
-{
+class Response {
+
     /**
      * @var int
      */
@@ -1559,67 +1591,62 @@ class Response
     /**
      * @var array
      */
-    private $result = [];
+    private $result=[];
 
     /**
      * @var BulbCommandException|null
      */
-    private $exception = null;
+    private $exception=null;
 
     /**
      * Response constructor.
      *
      * @param array $response
      */
-    public function __construct(array $response)
-    {
-        $this->deviceId = $response['id'];
+    public function __construct(array $response) {
+        $this->deviceId=$response['id'];
         if (isset($response['error'])) {
-            $this->exception = new BulbCommandException(
-                $response['error']['message'],
-                $response['error']['code'],
-                $response['id']
+            $this->exception=new BulbCommandException(
+                    $response['error']['message'],$response['error']['code'],$response['id']
             );
         } else {
-            $this->result = $response['result'];
+            $this->result=$response['result'];
         }
     }
 
     /**
      * @return int
      */
-    public function getDeviceId()
-    {
+    public function getDeviceId() {
         return $this->deviceId;
     }
 
     /**
      * @return array
      */
-    public function getResult()
-    {
+    public function getResult() {
         return $this->result;
     }
 
     /**
      * @return null|BulbCommandException
      */
-    public function getException()
-    {
+    public function getException() {
         return $this->exception;
     }
 
     /**
      * @return bool
      */
-    public function isSuccess()
-    {
+    public function isSuccess() {
         return is_null($this->exception);
     }
+
 }
+
 //========BulbCommandException (обработка исключений)========================================================
-class BulbCommandException extends Exception
-{
+class BulbCommandException extends Exception {
+
     /**
      * @var int
      */
@@ -1632,19 +1659,18 @@ class BulbCommandException extends Exception
      * @param int    $code
      * @param int    $bulbId
      */
-    public function __construct(string $message, int $code, int $bulbId)
-    {
-        parent::__construct($message, $code);
-        $this->bulbId = $bulbId;
+    public function __construct(string $message,int $code,int $bulbId) {
+        parent::__construct($message,$code);
+        $this->bulbId=$bulbId;
     }
 
     /**
      * @return int
      */
-    public function getBulbId()
-    {
+    public function getBulbId() {
         return $this->bulbId;
     }
+
 }
 
 //========LybraryEnd========================================================
