@@ -151,6 +151,20 @@ class BulbProperties
     const FLOW_PARAMS= 'flow_params';
     const MUSIC_ON = 'music_on';
     const NAME = 'name';
+
+    const bg_power = 'bg_power';
+    const bg_flowing = 'bg_flowing';
+    const bg_flow_params = 'bg_flow_params';
+    const bg_ct = 'bg_ct';
+    const bg_lmode = 'bg_lmode';
+    const bg_bright = 'bg_bright';
+    const bg_rgb = 'bg_rgb';
+    const bg_hue = 'bg_hue';
+    const bg_sat = 'bg_sat';
+    const nl_br = 'nl_br';
+    const active_mode = 'active_mode';
+
+        
 }
 //=============BulbFactory===================================================
 class BulbFactory
