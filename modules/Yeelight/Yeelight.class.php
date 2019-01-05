@@ -332,9 +332,6 @@ function usual(&$out) {
  $this->admin($out);
  
 }
- function processCycle() {
-  //to-do
- }
 /**
 * Install
 *
