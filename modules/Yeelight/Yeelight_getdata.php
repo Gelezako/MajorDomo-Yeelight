@@ -23,7 +23,8 @@ foreach($objects as $obj) {
     //,BulbProperties::DELAY_OFF  
     ,BulbProperties::FLOW_PARAMS  
     //,BulbProperties::MUSIC_ON
-    //,BulbProperties::NAME            
+    //,BulbProperties::NAME
+    ,'main_power'
     ,BulbProperties::bg_power
     ,BulbProperties::bg_flowing
     ,BulbProperties::bg_flow_params
@@ -34,7 +35,7 @@ foreach($objects as $obj) {
     ,BulbProperties::bg_hue
     ,BulbProperties::bg_sat
     ,BulbProperties::nl_br
-    ,BulbProperties::active_mode
+    //,BulbProperties::active_mode
     ];    
     echo "<table border=1><tr><td><pre>\n old data:\n";
     foreach ($prop as $p)
@@ -47,7 +48,17 @@ foreach($objects as $obj) {
     {
     	echo "[". $prop[$k]."] => ".$v."\n";
     	$v=trim($v);
-    	if(strlen($v)>0)sg($objName.".".$prop[$k],$v);
+    	if(strlen($v)>0)
+    	{
+    	    sg($objName.".".$prop[$k],$v);
+	    if($prop[$k] == 'main_power')
+	    {
+		if($v =='on')sg($objName.".status",1);
+		if($v =='off')sg($objName.".status",0);
+	    }
+    	}
+    
+    
     }
     //echo $objName."\n";
     echo "<td><pre>";

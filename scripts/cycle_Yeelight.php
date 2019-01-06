@@ -20,7 +20,7 @@ if (!is_array($objects))
 echo date("H:i:s") . " running " . basename(__FILE__) . PHP_EOL;
 
 $cycle_debug = true;
-
+$classname="Yeelight";
 $latest_check=0;
 $rcv_count = 0;
 $latest_data_received = time();
@@ -54,11 +54,18 @@ foreach($bulbs as $k => $bulb) {
 		$data=$bulb->recv();
 		if($data)
 		{
+			DebMes("Get from lamp:".json_encode($data),$classname);
 			if($data['method']=='props' && is_array($data['params']))
 			{
 				foreach ($data['params'] as $param => $param_value)
 				{
-					echo "sg('".$k.".".$param."','".$param_value."')\n";
+					DebMes("sg('".$k.".".$param."','".$param_value."')",$classname);
+					if($param == 'main_power')
+					{
+					if($param_value =='on')sg($k.".status",1);
+					if($param_value =='off')sg($k.".status",0);
+					
+					}
 					sg($k.".".$param,$param_value);
 				}
 		$rcv_count++;	

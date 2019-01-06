@@ -398,6 +398,13 @@ function usual(&$out) {
 		SQLUpdate('methods',$class);
 	}
 
+	$method_id=addClassMethod('Yeelight', 'switch',"$this->setProperty('status',($this->getProperty('status')+1)%2);");
+	if ($method_id) {
+		$class=SQLSelectOne("SELECT * FROM methods WHERE ID=".$method_id);
+		$class['DESCRIPTION']='Переключить лампу';
+		SQLUpdate('methods',$class);
+	}
+
 	$prop_id=addClassProperty('Yeelight', 'status', 0);//#1
 				  if ($prop_id) {
 					  $property=SQLSelectOne("SELECT * FROM properties WHERE ID=".$prop_id);
@@ -450,6 +457,7 @@ function usual(&$out) {
 	addClassProperty('Yeelight', 'Location', 0);				  
 
 	addClassProperty('Yeelight', 'power', 0);//power дублирует статус для обеспечения совместимости
+	addClassProperty('Yeelight', 'main_power', 0);//power дублирует статус для обеспечения совместимости
 	addClassProperty('Yeelight', 'color_mode', 0);
 	addClassProperty('Yeelight', 'flowing', 0);
 	addClassProperty('Yeelight', 'flow_params', 0);
@@ -480,14 +488,14 @@ $this->SearchDevices();
 	  SQLExec("delete from methods where description = 'Установить цвет лампочки'");
 	  SQLExec("delete from methods where description = 'Установить HSV цвет лампочки'");
 	  */
-	  
-      SQLExec("delete from methods where title = 'on_off'");
-      SQLExec("delete from methods where title = 'set_bright'");
+	    $data=SQLSelectOne("select id from classes where title = 'Yeelight'");
+      SQLExec("delete from methods where class_id = ".$data['id']);
+      /*SQLExec("delete from methods where title = 'set_bright'");
       SQLExec("delete from methods where title = 'set_name'");
       SQLExec("delete from methods where title = 'set_rgb'");
       SQLExec("delete from methods where title = 'set_ct'");
       SQLExec("delete from methods where title = 'set_hsv'"); 
-	  
+	    */
       SQLExec("delete from pvalues where property_id in (select id FROM properties where object_id in (select id from objects where class_id = (select id from classes where title = 'Yeelight')))");
       SQLExec("delete from properties where object_id in (select id from objects where class_id = (select id from classes where title = 'Yeelight'))");
       SQLExec("delete from objects where class_id = (select id from classes where title = 'Yeelight')");
