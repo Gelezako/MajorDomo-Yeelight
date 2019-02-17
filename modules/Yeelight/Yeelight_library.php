@@ -151,6 +151,20 @@ class BulbProperties
     const FLOW_PARAMS= 'flow_params';
     const MUSIC_ON = 'music_on';
     const NAME = 'name';
+
+    const bg_power = 'bg_power';
+    const bg_flowing = 'bg_flowing';
+    const bg_flow_params = 'bg_flow_params';
+    const bg_ct = 'bg_ct';
+    const bg_lmode = 'bg_lmode';
+    const bg_bright = 'bg_bright';
+    const bg_rgb = 'bg_rgb';
+    const bg_hue = 'bg_hue';
+    const bg_sat = 'bg_sat';
+    const nl_br = 'nl_br';
+    const active_mode = 'active_mode';
+
+        
 }
 //=============BulbFactory===================================================
 class BulbFactory
@@ -330,7 +344,19 @@ class Bulb
         //    );
         //$this-> Response->getDeviceId();
         //$this-> response->getResult();        
-	}
+	   }
+	   
+	   
+	  public function setBlocking($toggle = true)
+    {
+        return $this->socket->setBlocking($toggle);
+	  }
+   
+   public function recv()
+    {
+        $resp =  json_decode($this->socket->recv(self::PACKET_LENGTH,0), true); 
+        return $this->recv = $resp;	
+    }
 	
 	/**
      * @return Promise
@@ -869,7 +895,7 @@ class Socket
      *
      * The resulting socket resource will be set to non-blocking mode,
      * regardless of its previous state and whether this method succedes or
-     * if it fails. Make sure to reset with `setBlocking(true)` if you want to
+     * if it fails. Make sure to reset with `\(true)` if you want to
      * continue using blocking calls.
      *
      * @param string $address either of IPv4:port, hostname:port, [IPv6]:port, unix-path
@@ -1014,9 +1040,9 @@ class Socket
     public function recv($length, $flags)
     {
         $ret = @socket_recv($this->resource, $buffer, $length, $flags);
-        if ($ret === false) {
-            throw Exception::createFromSocketResource($this->resource);
-        }
+        //if ($ret === false) {
+          //  throw Exception::createFromSocketResource($this->resource);
+        //}
         return $buffer;
     }
 
@@ -1136,7 +1162,6 @@ class Socket
         }
         return $this;
     }
-
     /**
      * set socket option
      *
