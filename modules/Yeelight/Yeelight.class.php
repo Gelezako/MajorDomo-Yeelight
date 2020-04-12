@@ -203,7 +203,7 @@ else {
 		}
 	}
  
-  if($model=="ceiling" || $model == "ceiling1" || $model == "ceiling2" || $model == "ceiling3" || $model == "ceiling4") {
+  if($model=="ceiling" || $model == "ceiling1" || $model == "ceiling2" || $model == "ceiling3" || $model == "ceiling4" || "ceiling14") {
 	$objDescription = array('Потолочный светильник');
 	$rec = SQLSelectOne("SELECT ID FROM classes WHERE TITLE LIKE '" . DBSafe("Yeelight") . "'");
 		if (!$rec['ID']) {
