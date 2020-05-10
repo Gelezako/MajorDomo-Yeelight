@@ -87,7 +87,7 @@ foreach($bulbs as $k => $bulb) {
       echo date('H:i:s') . ' Stopping by command REBOOT or ONETIME ' . basename(__FILE__) . PHP_EOL;
       exit;
    }
-   
+sleep(1);
 }
 DebMes("Unexpected close of cycle: " . basename(__FILE__));
 
